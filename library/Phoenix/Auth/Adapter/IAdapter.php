@@ -24,7 +24,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-namespace Phoenix\Auth2\Adapter;
+namespace Phoenix\Auth\Adapter;
 
 abstract class IAdapter {
 

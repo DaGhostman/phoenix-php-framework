@@ -27,7 +27,7 @@
 
 
 
-namespace Phoenix\Auth2\Adapter;
+namespace Phoenix\Auth\Adapter;
 use Phoenix\Auth2\Adapter\IAdapter;
 use Phoenix\Db\Orm\AccessLayer;
 use Phoenix\Core\HttpErrorsManager;

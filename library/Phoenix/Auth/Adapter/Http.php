@@ -24,9 +24,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-namespace Phoenix\Auth2;
+namespace Phoenix\Auth;
 
-use Phoenix\Auth2\Adapter\IAdapter;
+use Phoenix\Auth\Adapter\IAdapter;
 use Phoenix\Router\Response;
 use Phoenix\Core\HttpErrorsManager;
 
