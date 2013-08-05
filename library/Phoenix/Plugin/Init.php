@@ -4,6 +4,7 @@ namespace Phoenix\Plugin;
 use Phoenix\Core\SignalSlot\Manager;
 use Phoenix\Core\SignalSlot\Signals;
 use Phoenix\Application\Configurator;
+use Phoenix\Router\Request;
 
 class Init {
     
@@ -21,10 +22,25 @@ class Init {
     private final function __construct(){
         if (file_exists(REAL_PATH . '/application/config/plugins.json') && is_readable(REAL_PATH . '/application/config/plugins.json')):
         $cfg = new Configurator('/application/config/plugins.json', Configurator::CONFIG_JSON);
-        foreach($cfg->plugins as $plugin):
-            Manager::getInstance()->emit(Signals::SIGNAL_PLUGIN_INIT, $plugin);
-            $this->init($plugin);
-        endforeach;
+        
+            if (!empty($cfg->plugins->general)):
+                foreach($cfg->plugins->general as $plugin):
+                    Manager::getInstance()->emit(Signals::SIGNAL_PLUGIN_INIT, $plugin);
+                    $this->init($plugin);
+                endforeach;
+            endif;
+            
+            $module = Request::getInstance()
+                ->getParam('route')
+                ->getModule();
+            
+            
+            if (!empty($cfg->plugins->$module)):
+                foreach($cfg->plugins->$module as $plugin):
+                    Manager::getInstance()->emit(Signals::SIGNAL_PLUGIN_INIT, $plugin);
+                    $this->init($plugin);
+                endforeach;
+            endif;
         endif;
     }
     
