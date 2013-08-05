@@ -25,7 +25,7 @@
  * 
  */
 
-namespace Phoenix\Auth\ACL;
+namespace Phoenix\Auth\Acl;
 class AccessList {
 
     private static $_instance = null;

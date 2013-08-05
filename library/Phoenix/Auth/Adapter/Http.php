@@ -24,9 +24,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-namespace Phoenix\Auth;
+namespace Phoenix\Auth\Adapter;
 
-use Phoenix\Auth\Adapter\IAdapter;
+use Phoenix\Auth2\Adapter\IAdapter;
 use Phoenix\Router\Response;
 use Phoenix\Core\HttpErrorsManager;
 
@@ -42,6 +42,12 @@ class Http extends IAdapter {
 
     public function __construct($fp)
     {
+        trigger_error(E_USER_NOTICE, 
+                "The HTTP Authentication is still experimental and its usage in 
+                    production is discouredged. If you belive it is stable 
+                    enough, please consider opening an Feature Request on GitHub"
+                );
+        
         $this->_fp = $fp;
         
         if (!isset($_SERVER['PHP_AUTH_USER'])):

@@ -10,8 +10,11 @@ class Request {
     const REQ_DELETE = 'DELETE';
     const REQ_HEAD = 'HEAD';
     
-    protected $uri;
-    protected $params;
+    protected $uri,
+            $params, 
+            $serverName,
+            $domainComponents,
+            $urlComponents;
     
     private static $instance = null;
     
@@ -39,7 +42,25 @@ class Request {
         {
             throw new \InvalidArgumentException('Invalid URL');
         }
+        // The protocol, user, password, host
+        $x = parse_url($url.$uri);
+        $this->urlComponents = $x;
+        $this->serverName = $x['host'];
+        $this->domainComponents = array();
         
+        if (preg_match_all('/\./i', $this->serverName) === 2):
+                list(
+                $this->domainComponents['subdomain'], 
+                $this->domainComponents['domain'], 
+                $this->domainComponents['tld'])=  explode('.', $this->serverName);
+        endif;
+        
+        if (preg_match_all('/\./i', $this->serverName) === 1):
+                $this->domainComponents['subdomain'] = null;
+                list(
+                $this->domainComponents['domain'], 
+                $this->domainComponents['tld'])=  explode('.', $this->serverName);
+        endif;
         
         foreach($params as $key => $value)
         {
@@ -61,6 +82,70 @@ class Request {
         return $this->uri;
     }
     
+    /**
+     * Returns the server name for the current request
+     * 
+     * @return string The server name which handles the current request
+     */
+    
+    public function getServerName()
+    {
+        return $this->serverName;
+    }
+    
+    /**
+     * Returns the subdomain of the current request
+     * 
+     * @return string The subdomain of the request
+     */
+    public function getSubDomain()
+    { 
+        return $this->domainComponents['subdomain'];
+    }
+    
+    public function __call($name) {
+        if (substr(strtolower($name), 0, 3) === 'get')
+                return $this->get(substr($name, 3), 'param');
+        
+        if (substr(strtolower($name), 0, 5) === 'fetch')
+                return $this->get(substr($name, 5), 'domain');
+    }
+
+    private function get($key, $switch)
+    {
+        switch ($switch):
+            case 'get':
+                return $this->getParam($key);
+                break;
+            case 'fetch':
+                return $this->urlComponents[$key];
+                break;
+            default:
+                return false;
+                break;
+        endswitch;
+    }
+    
+    /**
+     * Returns the domain name WITHOUT tld
+     * 
+     * @return string The domain name WITHOUT tld
+     */
+    
+    public function getDomainName()
+    {
+        return $this->domainComponents['domain'];
+    }
+    
+    /**
+     * Return domains tld
+     * 
+     * @return string The domain tld
+     */
+    public function getTld()
+    {
+        return $this->domainComponents['tld'];
+    }
     /**
      * Preforms a check against the request to determinate its type
      * 

@@ -58,10 +58,10 @@ use Phoenix\Storage\Session;
 
 class Db extends IAdapter {
 
-    const SAVE_ALL = 0,
-            SAVE_DB = 1,
-            SAVE_REG = 2,
-            SAVE_SESS = 3;
+    const SAVE_ALL = 'all',
+            SAVE_DB = 'database',
+            SAVE_REG = 'registry',
+            SAVE_SESS = 'session';
     
     protected $__identity = null,
             $__access = null,
@@ -307,7 +307,4 @@ class Db extends IAdapter {
     }
 
 }
-/**
- * @TODO Should decide framework version for usage of the function()[key]; to get results from DB and remove trash lines
- */
 ?>

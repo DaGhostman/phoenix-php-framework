@@ -26,8 +26,8 @@
  */
 
 namespace Phoenix\Auth;
-use Phoenix\Auth2\Adapter\Db;
-use Phoenix\Auth2\Adapter\Http;
+use Phoenix\Auth\Adapter\Db;
+use Phoenix\Auth\Adapter\Http;
 use Phoenix\Core\HttpErrorsManager;
 use Phoenix\Router\Response;
 

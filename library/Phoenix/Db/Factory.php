@@ -68,6 +68,7 @@ class Factory {
             return $this;
         } catch (\PDOException $e) {
             throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
+            return false;
         }
     }
     
@@ -86,10 +87,12 @@ class Factory {
             $this->connect();
         try {
             $this->statement->execute($params);
-            return $this;
+            
         } catch (\PDOException $e) {
             throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
         }
+        
+        return $this;
     }
     
     public function getLastId($name = null)
@@ -272,6 +275,8 @@ class Factory {
     public function setAutoCommit($enabled = false)
     {
         $this->autoCommit = $enabled;
+        
+        return $this;
     }
     
     public function disconnect()
@@ -289,6 +294,14 @@ class Factory {
             $this->link = null;
             return false;
         }
+    }
+    
+    public function hasError()
+    {
+        if ($this->getStatement()->errorCode() == '00000' | '')
+            return false;
+        else
+            return true;
     }
 }
 

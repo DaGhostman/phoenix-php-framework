@@ -24,8 +24,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
-namespace Phoenix\Auth\ACL;
+namespace Phoenix\Auth\Acl;
 class Role {
 
     protected $_name = '',
