@@ -11,7 +11,7 @@ class Request {
     const REQ_HEAD = 'HEAD';
     
     protected $uri,
-            $params, 
+            $params = array(), 
             $serverName,
             $domainComponents,
             $urlComponents;
@@ -35,6 +35,8 @@ class Request {
      */
     private function __construct($uri, $params = array())
     {
+        $params = !empty($params) ? $params : array();
+        
         $url = ($_SERVER['SERVER_PORT'] == 80 ? 'http://' : 'https://') . 
                     $_SERVER['SERVER_NAME'];
         
@@ -48,14 +50,14 @@ class Request {
         $this->serverName = $x['host'];
         $this->domainComponents = array();
         
-        if (preg_match_all('/\./i', $this->serverName) === 2):
+        if (preg_match_all('/\./i', $this->serverName, $matches) === 2):
                 list(
                 $this->domainComponents['subdomain'], 
                 $this->domainComponents['domain'], 
                 $this->domainComponents['tld'])=  explode('.', $this->serverName);
         endif;
         
-        if (preg_match_all('/\./i', $this->serverName) === 1):
+        if (preg_match_all('/\./i', $this->serverName, $matches) === 1):
                 $this->domainComponents['subdomain'] = null;
                 list(
                 $this->domainComponents['domain'], 
@@ -103,7 +105,7 @@ class Request {
         return $this->domainComponents['subdomain'];
     }
     
-    public function __call($name) {
+    public function __call($name, $args = array()) {
         if (substr(strtolower($name), 0, 3) === 'get')
                 return $this->get(substr($name, 3), 'param');
         
@@ -198,6 +200,7 @@ class Request {
      */
     public function getParam($key)
     {
+        var_dump($this->params);
         if (!array_key_exists($key, $this->params)) {
             throw new \InvalidArgumentException(
                     "The request parameter with key: '$key' is invalid.");

@@ -28,8 +28,14 @@ class HttpErrorsManager {
     }
     
     private function __construct(){
-        Manager::getInstance()->bind(Signals::SIGNAL_ERROR, $this->sendError());
-        Manager::getInstance()->bind(Signals::SIGNAL_EXCEPTION, $this->sendError());
+        Manager::getInstance()->bind(Signals::SIGNAL_ERROR, function($err){
+                    HttpErrorsManager::getInstance()
+                            ->sendError($err['code'] ? $err['code'] : 500, $err['error'] ? $err['error'] : '');
+        });
+        Manager::getInstance()->bind(Signals::SIGNAL_EXCEPTION, function($err){
+                    HttpErrorsManager::getInstance()
+                            ->sendError($err['code'] ? $err['code'] : 500, $err['exception'] ? $err['exception'] : new \Exception('Unknowon Error Occured'));
+        });
     }
     
     public function setErrorModule($module)

@@ -74,10 +74,11 @@ class Translate {
             $this->xml = new \SimpleXMLElement(REAL_PATH . $this->dir . 
                     $this->lang . '.xml', 
                     NULL, TRUE);
+            else:
+                throw new \RuntimeException('The file '.REAL_PATH.$this->dir.$this->lang.'.xml Could not be openede for parsing');
             endif;
         endif;
         endif;
-        
         
         if (!APC::getInstance()->exists('language-'.$this->lang)) {
             APC::getInstance()->set('language-'.$this->lang, $this->xml->asXML());

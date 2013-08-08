@@ -54,7 +54,8 @@ class Enroute
     public function route($request, $response)
     {
         
-        $raw = Registry::getInstance()->raw('defaultRouteStorage');
+        $raw = Registry::getInstance()->raw('defaultRouteStorage') ? 
+                Registry::getInstance()->raw('defaultRouteStorage') : array();
         foreach ($raw as $route):
             if ($route->match($request)):
                 $request->setParams('route', $route->route);

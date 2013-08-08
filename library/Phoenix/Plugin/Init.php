@@ -23,7 +23,7 @@ class Init {
         if (file_exists(REAL_PATH . '/application/config/plugins.json') && is_readable(REAL_PATH . '/application/config/plugins.json')):
         $cfg = new Configurator('/application/config/plugins.json', Configurator::CONFIG_JSON);
         
-            if (!empty($cfg->plugins->general)):
+            if (isset($cfg->plugins->general)):
                 foreach($cfg->plugins->general as $plugin):
                     Manager::getInstance()->emit(Signals::SIGNAL_PLUGIN_INIT, $plugin);
                     $this->init($plugin);
@@ -31,11 +31,10 @@ class Init {
             endif;
             
             $module = Request::getInstance()
-                ->getParam('route')
                 ->getModule();
             
             
-            if (!empty($cfg->plugins->$module)):
+            if (isset($cfg->plugins->$module)):
                 foreach($cfg->plugins->$module as $plugin):
                     Manager::getInstance()->emit(Signals::SIGNAL_PLUGIN_INIT, $plugin);
                     $this->init($plugin);

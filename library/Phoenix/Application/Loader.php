@@ -27,7 +27,7 @@ class Loader
      */
     public function __construct($appPath =  'application', $options = array())
     {
-        Init::getInstance();
+        
         
         Manager::getInstance()->emit(Signals::SIGNAL_INIT);
         Core::getInstance();
@@ -80,7 +80,6 @@ class Loader
     
     public function run()
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_RUN);
         
         try {
             Front::getInstance(
@@ -90,6 +89,9 @@ class Loader
                     'modulePath' => $this->modulePath,
                     'viewPath' => $this->viewPath
                 ))->run();
+            
+            Init::getInstance();
+            Manager::getInstance()->emit(Signals::SIGNAL_RUN);
         } catch (\Exception $e) {
             print $e;
         }

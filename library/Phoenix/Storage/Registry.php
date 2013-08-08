@@ -41,7 +41,16 @@ class Registry
     
     public static function get($key, $namespace='defaultRegistry')
     {
-        return self::$_registry[$namespace][$key];
+        if (array_key_exists($namespace, self::$_registry)):
+            if (array_key_exists($key, self::$_registry[$namespace])):
+                return self::$_registry[$namespace][$key];
+            else:
+                return false;
+            endif;
+        else:
+            return false;
+        endif;
+        
     }
     
     public static function drop($key, $namespace = 'defaultNamespace')
@@ -56,9 +65,11 @@ class Registry
     
     public static function raw($namespace = 'defaultRegistry')
     {
-        if (isset($namespace))
+        if (isset($namespace) && array_key_exists($namespace, self::$_registry))
             return self::$_registry[$namespace];
-        else
+        elseif (!isset($namespace))
             return self::$_registry;
+        else
+            return array();
     }
 }

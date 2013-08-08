@@ -62,15 +62,6 @@ class Core {
 
     public static function writelog($logfile, $message)
     {
-        if (!in_array('log', stream_get_wrappers())) {
-            Manager::getInstance()->emit(Signals::SIGNAL_STREAM_REGISTER, 
-                    array("stream" => "log", 
-                        "handler" => "Phoenix\Core\Streams\LogStream")
-                    );
-            stream_register_wrapper("log", 
-                    "Phoenix\Core\Streams\LogStream");
-            
-        }
         
         
         self::$_fp = fopen("log://{$logfile}", "ab");
