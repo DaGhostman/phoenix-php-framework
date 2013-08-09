@@ -21,33 +21,51 @@ class Response {
     
     /**
      * @type const
+     * Definition of the "<strong>200 OK</strong>" HTTP response code
+     */
+    const HTTP_200 = 200;
+    
+    /**
+     * @type const
+     * Definition of the "<strong>301 Moved Permanently</strong>" HTTP response code
+     */
+    const HTTP_301 = 301;
+    
+    /**
+     * @type const
+     * Definition of the "<strong>302 Found</strong>" HTTP response code
+     */
+    const HTTP_302 = 302;
+    
+    /**
+     * @type const
      * Definition of the "<strong>401 Unauthorized</strong>" HTTP response code
      */
-    const HTTP_401 = 1;
+    const HTTP_401 = 401;
     
     /**
      * @type const
      * Definition of the "<strong>403 Forbidden</strong>" HTTP response code
      */
-    const HTTP_403 = 2;
+    const HTTP_403 = 403;
     
     /**
      * @type const
      * Definition of the "<strong>403 Forbidden</strong>" HTTP response code
      */
-    const HTTP_404 = 3;
+    const HTTP_404 = 404;
     
     /**
      * @type const
      * Definition of the "<strong>500  Internal Server Error</strong>" HTTP response code
      */
-    const HTTP_500 = 4;
+    const HTTP_500 = 500;
     
     /**
      * @type const
      * Definition of the "<strong>503 Service Temporarily Unavailable</strong>" HTTP response code
      */
-    const HTTP_503 = 5;
+    const HTTP_503 = 503;
     
     protected $version;
     protected $headers = array();
@@ -73,30 +91,41 @@ class Response {
     
     public function addHeader($header)
     {
-        switch ($header):
-            case self::HTTP_401:
-                $this->headers[] = '401 Unauthorized';
-                break;
-            case self::HTTP_403:
-                $this->headers[] = '403 Forbidden';
-                break;
-            case self::HTTP_404:
-                $this->headers[] = '404 Not Found';
-                break;
-            case self::HTTP_500:
-                $this->headers[] = '500 Internal Server Error';
-                break;
-            case self::HTTP_503:
-                $this->headers[] = '503 Service Temprarily Unavailable';
-                $this->headers[] = 'Status: 503 Service Temporarily Unavailable';
-                $this->headers[] = 'Retry-After: 60';
-                break;
-            default:
-                $this->headers[] = $header;
-                break;
-        endswitch;
+        $this->headers[] = $header;
         
         return $this;
+    }
+    
+    public function sendStatusCode($code, $argc = null)
+    {
+        switch ($code):
+            case self::HTTP_200:
+                header($this->getVersion() . ' 200 OK', true, 200);
+                break;
+            case self::HTTP_301:
+                header($this->getVersion() . ' 301 Moved Permanently', true, 301);
+                header ('Location: '.$argc, true);
+                break;
+            case self::HTTP_302:
+                header ('Location: '.$argc, true);
+                break;
+            case self::HTTP_401:
+                header($this->getVersion() . ' 401 Unauthorized', true, 401);
+                break;
+            case self::HTTP_403:
+                header($this->getVersion() . ' 403 Forbidden', true, 403);
+                break;
+            case self::HTTP_404:
+                header($this->getVersion() . ' 404 Not Found', true, 404);
+                break;
+            case self::HTTP_500:
+                header($this->getVersion() . ' 500 Internal Server Error', true, 500);
+            case self::HTTP_503:
+                header($this->getVersion() . ' 503 Service Temporarily Unavailable', true, 503);
+                header('Status: 503 Service Temporarily Unavailable', true);
+                header('Retry-After: 300', true);
+                break;
+        endswitch;
     }
     
     public function addHeaders(array $headers)
@@ -111,12 +140,12 @@ class Response {
         return $this->headers;
     }
     
-    public function send()
+    public function send($code = null)
     {
         if(!headers_sent()):
             Manager::getInstance()->emit(Signals::SIGNAL_RESPONSE);
             foreach ($this->headers as $header):
-                header($this->getVersion()." ".$header, true);
+                header($this->getVersion()." ".$header, true, $code);
             endforeach;
         endif;
     }

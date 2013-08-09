@@ -200,7 +200,6 @@ class Request {
      */
     public function getParam($key)
     {
-        var_dump($this->params);
         if (!array_key_exists($key, $this->params)) {
             throw new \InvalidArgumentException(
                     "The request parameter with key: '$key' is invalid.");

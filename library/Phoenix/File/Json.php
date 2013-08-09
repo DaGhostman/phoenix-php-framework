@@ -47,7 +47,6 @@ class Json implements \Serializable {
     
     public function __get($key)
     {
-        var_dump($key);
         return $this->contents->$key;
     }
     
