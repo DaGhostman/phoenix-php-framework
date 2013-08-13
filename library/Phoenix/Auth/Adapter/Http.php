@@ -26,7 +26,7 @@
  */
 namespace Phoenix\Auth\Adapter;
 
-use Phoenix\Auth2\Adapter\IAdapter;
+use Phoenix\Auth\Adapter\IAdapter;
 use Phoenix\Router\Response;
 use Phoenix\Core\HttpErrorsManager;
 

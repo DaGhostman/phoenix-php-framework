@@ -28,9 +28,18 @@ class Loader
     public function __construct($appPath =  'application', $options = array())
     {
         
-        
         Manager::getInstance()->emit(Signals::SIGNAL_INIT);
         Core::getInstance();
+        
+        if (!in_array('log', stream_get_wrappers())) {
+            Manager::getInstance()->emit(Signals::SIGNAL_STREAM_REGISTER, 
+                    array("stream" => "log", 
+                        "handler" => "Phoenix\Core\Streams\LogStream")
+                    );
+            stream_register_wrapper("log", 
+                    "Phoenix\Core\Streams\LogStream");
+            
+        }
         
         if (extension_loaded('apc') && ini_get('apc.enabled')) {
             define('SYSTEM_CACHE', 'APC');
@@ -93,7 +102,7 @@ class Loader
             Init::getInstance();
             Manager::getInstance()->emit(Signals::SIGNAL_RUN);
         } catch (\Exception $e) {
-            print $e;
+            throw new \RuntimeException("Exception occured while trying to run the application", null, $e);
         }
     }
 }

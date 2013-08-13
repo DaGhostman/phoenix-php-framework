@@ -1,7 +1,7 @@
 <?php
 namespace Phoenix\File;
 
-class Json implements \Serializable {
+class Json {
     
     private $contents;
     public function __construct($filepath, $parse = true)
@@ -35,18 +35,8 @@ class Json implements \Serializable {
         return json_encode($this->contents);
     }
     
-    public function serialize()
-    {
-        return serialize($this->contents);
-    }
-    
-    public function unserialize($content)
-    {
-        return unserialize($content);
-    }
-    
     public function __get($key)
-    {
+    {  
         return $this->contents->$key;
     }
     

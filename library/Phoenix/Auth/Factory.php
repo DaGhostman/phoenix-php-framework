@@ -37,8 +37,9 @@ class Factory {
             AUTH_HTTP = 2;
     
     protected $__instance = null;
+    private static $_instance = null;
     
-    public function __construct($adapter, $arg) {
+    public function __construct($adapter, &$arg) {
         switch ($adapter):
             case self::AUTH_DB:
                 $this->__instance = new Db($arg);
@@ -54,10 +55,16 @@ class Factory {
                                 )
                         );
         endswitch;
-        
-        return $this->__instance;
     }
 
+    public static function getInstance($adapter, $arg)
+    {
+        if (self::$_instance == null || !self::$_instance instanceof Factory):
+            self::$_instance = new Factory($adapter, $arg);
+        endif;
+        
+        return self::$_instance->__instance;
+    }
 }
 
 ?>

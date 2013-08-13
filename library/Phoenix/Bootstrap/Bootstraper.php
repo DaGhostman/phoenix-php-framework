@@ -23,15 +23,6 @@ class Bootstraper
         if (!defined('APPLICATION_PATH')) 
             define('APPLICATION_PATH', REAL_PATH . '/application');
         
-        if (!in_array('log', stream_get_wrappers())) {
-            Manager::getInstance()->emit(Signals::SIGNAL_STREAM_REGISTER, 
-                    array("stream" => "log", 
-                        "handler" => "Phoenix\Core\Streams\LogStream")
-                    );
-            stream_register_wrapper("log", 
-                    "Phoenix\Core\Streams\LogStream");
-            
-        }
     }
     
 }

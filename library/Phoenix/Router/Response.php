@@ -140,12 +140,12 @@ class Response {
         return $this->headers;
     }
     
-    public function send($code = null)
+    public function send()
     {
         if(!headers_sent()):
             Manager::getInstance()->emit(Signals::SIGNAL_RESPONSE);
             foreach ($this->headers as $header):
-                header($this->getVersion()." ".$header, true, $code);
+                header($header, true);
             endforeach;
         endif;
     }

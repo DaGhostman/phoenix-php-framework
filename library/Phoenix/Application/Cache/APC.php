@@ -70,10 +70,11 @@ class APC {
     }
     
     public function get($key) {
-        if (apc_exists($key))
+        if (apc_exists($key)):
             return apc_fetch($key);
-        else 
+        else :
             return false;
+        endif;
     }
     
     public function set($key, $val) {

@@ -37,12 +37,9 @@ class Translate {
     protected $xml = null;
 
     public function __construct() {
-        $lang = (Session::get('lang')) ? Session::get('lang') : $this->getPrefferedLanguage();
         
-        $this->lang = $lang;
+        $this->lang = $this->getPrefferedLanguage();
         
-        
-        Session::set('lang', $lang);
         $this->parse();
     }
     
@@ -91,7 +88,8 @@ class Translate {
         $cfg = new Configurator();
         
         $websiteLanguages = array();
-        foreach($cfg->language->supported as $value)
+        $raw = $cfg->raw();
+        foreach($raw['language']['supported'] as $value)
             $websiteLanguages[] = strtolower($value);
         
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']))
@@ -104,6 +102,7 @@ class Translate {
                     '(;\s*q\s*=\s*((1(\.0{0,3}))|(0(\.[0-9]{0,3}))))?/i',
                     $_SERVER['HTTP_ACCEPT_LANGUAGE'],
                     $langParse);
+            
             
             $langs = $langParse[1];
             $quals = $langParse[4];
@@ -126,11 +125,11 @@ class Translate {
             
             $acceptedLanguages = array_keys($langArr);
             
-            
             foreach ($acceptedLanguages as $preferredLanguage)
             {
                 if (in_array(strtolower($preferredLanguage), $websiteLanguages))
                 {
+                    
                     return $preferredLanguage;
                     
                 }

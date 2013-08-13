@@ -128,7 +128,7 @@ class Viewer implements \ArrayAccess{
 	
 	public function __get($key)
 	{
-		return $this->tpl[$key];
+		return @$this->tpl[$key];
 	}
         
         public function sendOutput($state = false)

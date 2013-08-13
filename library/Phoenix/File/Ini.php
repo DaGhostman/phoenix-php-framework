@@ -1,13 +1,14 @@
 <?php
 namespace Phoenix\File;
 
-class Ini {
+class Ini implements \ArrayAccess {
     
-    private $contents;
+    private $contents, $raw;
     public function __construct($filepath, $parse = true)
     {
         if (is_file($filepath) & is_readable($filepath)):
             $content = parse_ini_file($filepath, $parse);
+            $this->raw = $content;
             $this->contents = $this->toObject($content);
         endif;
         
@@ -35,9 +36,30 @@ class Ini {
         return $this->contents->$key;
     }
     
+    public function raw()
+    {
+        return $this->raw;
+    }
+    
     public function __set($key, $value)
     {
         $this->contents->$key = $value;
+    }
+
+    public function offsetExists($offset) {
+        return array_key_exists($offset, $this->raw);
+    }
+
+    public function offsetGet($offset) {
+        return $this->raw[$offset];
+    }
+
+    public function offsetSet($offset, $value) {
+        $this->raw[$offset] = $value;
+    }
+
+    public function offsetUnset($offset) {
+        unset($this->raw[$offset]);
     }
 }
 ?>

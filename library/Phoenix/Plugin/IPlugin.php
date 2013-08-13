@@ -31,7 +31,7 @@ abstract class IPlugin {
      * @link https://code.google.com/p/rebirth-php-framework/ documentation 
      * on usage of plugins
      */
-    abstract public static function __();
+    abstract public function __();
 
 }
 

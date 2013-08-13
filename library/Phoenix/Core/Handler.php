@@ -10,11 +10,18 @@ class Handler {
         Core::getInstance();
         Manager::getInstance()->emit(Signals::SIGNAL_ERROR, array("code" => 500, "error" => $errno.' '.$errfile.':'.$errline.' '.$errstr));
         
+        
+        
         $error_string = '';
         $error_string .= '=====['.date("d:m:Y H:i:s").']====='.PHP_EOL;
         $error_string .= 'Error Occured in File: ' . $errfile. ' on line: ' . $errline . PHP_EOL;
         $error_string .= 'Message: ' . $errstr . PHP_EOL;
         $error_string .= 'Code: ' . $errno . PHP_EOL;
+        $error_string .= 'Debug backtrace: ' . PHP_EOL;
+        ob_start();
+        debug_print_backtrace();
+        $error_string .= ob_get_clean();
+        
         $error_string .= '---------------' . PHP_EOL . PHP_EOL;
         
         Core::writelog('Errors.log',$error_string);
@@ -37,7 +44,10 @@ class Handler {
             $i++;
         }
         $error_string .= '---------- END TRACE '. PHP_EOL;
-        
+        $error_string .= 'Debug backtrace: ' . PHP_EOL;
+        ob_start();
+        debug_print_backtrace();
+        $error_string .= ob_get_clean();
         Core::writelog('Exceptions.log', $error_string);
         }
     }

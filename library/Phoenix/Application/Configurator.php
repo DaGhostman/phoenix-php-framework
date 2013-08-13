@@ -15,7 +15,7 @@ class Configurator {
     
     const CONFIG_JSON = 1;
     const CONFIG_INI = 2;
-    protected $filename = '';
+    protected $filename = '', $cfg = null;
     
     public function __construct($filename = '/application/config/application.ini', $type = self::CONFIG_INI)
     {
@@ -25,11 +25,12 @@ class Configurator {
             $key = md5($this->filename);
             $cfg = APC::getInstance()->get($key);
             
+            
+            
             if ($cfg != false) {
                 $this->cfg = unserialize($cfg);
                 return;
             }
-            
         }
         
         
@@ -45,7 +46,7 @@ class Configurator {
             default:
                 HttpErrorsManager::getInstance()->sendError(
                         \Phoenix\Router\Response::HTTP_503, 
-                        new \Exception("Unable to get the type of the configuration file")
+                        new \RuntimeException("Unable to get the type of the configuration file")
                         );
                 break;
         endswitch;
@@ -58,7 +59,12 @@ class Configurator {
         return $this->cfg->$name;
     }
     
-    public function __destruct() {
+    public function raw()
+    {
+        return $this->cfg->raw();
+    }
+
+        public function __destruct() {
         if (defined('SYSTEM_CACHE') && SYSTEM_CACHE === 'APC'){
             if (!APC::getInstance()->exists(md5($this->filename))) {
             Manager::getInstance()->emit(Signals::SIGNAL_CACHE_STORE, array(

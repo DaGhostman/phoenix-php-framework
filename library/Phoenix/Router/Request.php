@@ -102,7 +102,9 @@ class Request {
      */
     public function getSubDomain()
     { 
-        return $this->domainComponents['subdomain'];
+        if (array_key_exists('subdomain', $this->domainComponents))
+            return $this->domainComponents['subdomain'];
+        else return '';
     }
     
     public function __call($name, $args = array()) {
