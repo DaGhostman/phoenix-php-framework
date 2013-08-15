@@ -27,7 +27,6 @@
 
 namespace Phoenix\View;
 use Phoenix\Application\Configurator;
-use Phoenix\Storage\Session;
 use Phoenix\Application\Cache\APC;
 
 class Translate {
@@ -56,6 +55,12 @@ class Translate {
             endif;
 	
         return $string;
+    }
+    
+    public function parse_again() 
+    {
+        $this->xml = new \XMLReader();
+        $this->xml->read(REAL_PATH.$this->dir.$this->lang.'.xml');
     }
     
     protected function parse()
