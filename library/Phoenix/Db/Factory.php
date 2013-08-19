@@ -7,7 +7,7 @@ use Phoenix\Application\Configurator;
 
 class Factory {
     
-    protected $link = null;
+    protected $link = null, $dsn = null;
     protected $statement = null;
     protected $result = null;
     protected $fetchMode = \PDO::FETCH_ASSOC;
@@ -20,13 +20,30 @@ class Factory {
     {
         $cfg = new Configurator('/application/config/application.ini', Configurator::CONFIG_INI);
         
-        
         $this->engine = isset($connection['engine']) ? $connection['engine'] : ($cfg->db->engine ? $cfg->db->engine : 'mysql');
-        $this->host = isset($connection['host']) ? $connection['host'] : ($cfg->db->hostname ? $cfg->db->hostname : 'localhost');
-        $this->user = isset($connection['user']) ? $connection['user'] : ($cfg->db->username ? $cfg->db->username : 'root');
-        $this->pass = isset($connection['pass']) ? $connection['pass'] : ($cfg->db->password ? $cfg->db->password : 'root');
-        $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
-        $this->port = isset($connection['port']) ? $connection['port'] : ($cfg->db->port ? $cfg->db->port : '3306');
+        switch($this->engine):
+            case 'mysql':
+            case 'pgsql':
+                $this->host = isset($connection['host']) ? $connection['host'] : ($cfg->db->hostname ? $cfg->db->hostname : 'localhost');
+                $this->user = isset($connection['user']) ? $connection['user'] : ($cfg->db->username ? $cfg->db->username : 'root');
+                $this->pass = isset($connection['pass']) ? $connection['pass'] : ($cfg->db->password ? $cfg->db->password : 'root');
+                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
+                $this->port = isset($connection['port']) ? $connection['port'] : ($cfg->db->port ? $cfg->db->port : '3306');
+                
+                $this->dsn = sprintf("%s:host=%s;dbname=%s;port=%s;", $this->engine, $this->host, $this->name, $this->port);
+                break;
+            case 'sqlite':
+            case 'uri':
+                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
+                $this->dsn = sprintf("%s:%s", $this->engine, $this->name);
+                break;
+            case 'oci':
+                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
+                $this->dsn = sprintf("%s:dbname=%s", $this->engine, $this->name);
+        endswitch;
+        
+        
+        
         
         return $this;
         
@@ -39,9 +56,9 @@ class Factory {
             return;
         
         try {
-        $dsn = sprintf("%s:host=%s;dbname=%s;port=%s;", $this->engine, $this->host, $this->name, $this->port);
         
-            $this->link = new \PDO($dsn, 
+        
+            $this->link = new \PDO($this->dsn, 
                 $this->user, 
                 $this->pass
             );
@@ -291,6 +308,7 @@ class Factory {
         try {
             return (bool) $this->link->query('SELECT 1+1');
         } catch (\PDOException $e) {
+            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
             $this->link = null;
             return false;
         }

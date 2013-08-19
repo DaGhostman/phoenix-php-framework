@@ -72,32 +72,24 @@ class Loader
         set_exception_handler(array('Phoenix\Core\Handler', 'exception_handler'));
         
         
-            if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
-            {
-                require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
-                $this->applicationBootstrap = new \Bootstrap();
+        if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
+        {
+            require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
+            $this->applicationBootstrap = new \Bootstrap();
                 
-                foreach(get_class_methods($this->applicationBootstrap) as $method)
-                {
-                    $this->applicationBootstrap->$method();
-                }
+            foreach(get_class_methods($this->applicationBootstrap) as $method)
+            {
+                $this->applicationBootstrap->$method();
             }
+        }
         
-        return $this;
-        
+        return $this; 
     }
     
     public function run()
     {
-        
         try {
-            Front::getInstance(
-                array(
-                    'applicationPath' => $this->applicationPath,
-                    'controllerPath' => $this->controllerPath,
-                    'modulePath' => $this->modulePath,
-                    'viewPath' => $this->viewPath
-                ))->run();
+            Front::getInstance()->run();
             
             Init::getInstance();
             Manager::getInstance()->emit(Signals::SIGNAL_RUN);

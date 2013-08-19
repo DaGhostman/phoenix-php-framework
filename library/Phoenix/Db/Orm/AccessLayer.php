@@ -12,6 +12,8 @@ abstract class AccessLayer {
     public $entityTable = null;
     private $entities = array();
     
+    protected $_idColumn = 'id';
+    
     final public function __construct(Factory $adapter)
     {
         $this->adapter = $adapter;
@@ -35,7 +37,7 @@ abstract class AccessLayer {
     
     final public function findById($id)
     {
-        $this->getAdapter()->select($this->entityTable, array('id' => $id));
+        $this->getAdapter()->select($this->entityTable, array($this->_idColumn => $id));
         
         if (!$row = $this->getAdapter()->fetch())
             return null;
@@ -73,6 +75,14 @@ abstract class AccessLayer {
         return $this;
     }
     
+    final public function setIdColumn($columnName)
+    {
+        $this->_idColumn = $columnName;
+        
+        return $this;
+    }
+
+
     
     abstract public function createEntity(array $row);
     

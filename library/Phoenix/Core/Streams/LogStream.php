@@ -54,8 +54,8 @@ class LogStream {
     public function stream_seek($offset, $whence)
     {
         flock($this->varname, LOCK_EX | LOCK_NB);
-        $r = stream_get_contents($this->varname);
-        $l = strlen(&$r);
+        $r = &stream_get_contents($this->varname);
+        $l = strlen($r);
         $p = &$this->position;
         
         switch($whence):

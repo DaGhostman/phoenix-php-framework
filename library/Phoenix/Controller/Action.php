@@ -52,10 +52,6 @@ class Action
         }
     }
     
-    public function __toString() {
-            return __CLASS__;
-    }
-    
         
     final public function __destruct()
     {

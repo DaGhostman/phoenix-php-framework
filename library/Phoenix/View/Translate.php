@@ -1,4 +1,4 @@
- <?php
+<?php
 
 /**
  * 
@@ -57,34 +57,43 @@ class Translate {
         return $string;
     }
     
-    public function parse_again() 
-    {
-        $this->xml = new \XMLReader();
-        $this->xml->read(REAL_PATH.$this->dir.$this->lang.'.xml');
-    }
-    
     protected function parse()
     {
-        if (defined('SYSTEM_CACHE') && SYSTEM_CACHE === 'APC'):
-            $cache = APC::getInstance()->get('language-'.$this->lang);
-        
-        if ($cache != false)
-            $this->xml = new \SimpleXMLElement($cache);
-        else
-            if ($this->xml == null):
-            if (is_readable(REAL_PATH.$this->dir.$this->lang.'.xml') === TRUE):
-            $this->xml = new \SimpleXMLElement(REAL_PATH . $this->dir . 
-                    $this->lang . '.xml', 
-                    NULL, TRUE);
-            else:
-                throw new \RuntimeException('The file '.REAL_PATH.$this->dir.$this->lang.'.xml Could not be openede for parsing');
+        $filename = REAL_PATH . $this->dir . 
+                                $this->lang . '.xml';
+        if (defined('SYSTEM_CACHE')):
+            switch (SYSTEM_CACHE):
+                case 'APC':
+                    
+                    $cache = APC::getInstance()->get('language-'.$this->lang);
+                    if ($cache != FALSE)
+                        $this->xml = new \SimpleXMLElement($cache);
+                    else {
+                        if (is_file($filename) && 
+                                is_readable($filename))
+                            $this->xml = new \SimpleXMLElement(
+                                    $filename, NULL, TRUE);
+                            
+                        else
+                            throw new \RuntimeException($filename . 
+                                    ' could not be opened for parsing');
+                    }
+                    break;
+                default:
+                    throw new \RuntimeException('Unsupported caching instance');
+            endswitch;
+        else:
+            if (is_file($filename) && is_readable($filename))
+                $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
+            
+            if (defined('SYSTEM_CACHE')):
+                if (SYSTEM_CACHE === 'APC' && 
+                !APC::getInstance()->exists('language-'.$this->lang))
+                    APC::getInstance ()
+                        ->set('language-'.$this->lang, 
+                                $this->xml->asXML ());
             endif;
         endif;
-        endif;
-        
-        if (!APC::getInstance()->exists('language-'.$this->lang)) {
-            APC::getInstance()->set('language-'.$this->lang, $this->xml->asXML());
-        }
         return; 
     }
 
