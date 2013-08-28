@@ -32,24 +32,13 @@ class Loader
         Core::getInstance();
         
         if (!in_array('log', stream_get_wrappers())) {
-            Manager::getInstance()->emit(Signals::SIGNAL_STREAM_REGISTER, 
-                    array("stream" => "log", 
-                        "handler" => "Phoenix\Core\Streams\LogStream")
-                    );
             stream_register_wrapper("log", 
                     "Phoenix\Core\Streams\LogStream");
             
         }
         
-        if (extension_loaded('apc') && ini_get('apc.enabled')) {
-            define('SYSTEM_CACHE', 'APC');
-            Manager::getInstance()->bind(Signals::SIGNAL_CACHE_STORE, function($argc){
-                        $key = $argc['key'];
-                        Cache\APC::getInstance()->set($key,$argc['value']);
-            });
-        } else {
-            define ('SYSTEM_CACHE', FALSE);
-        }
+        if (!defined('APPLICATION_PATH')) 
+            define('APPLICATION_PATH', REAL_PATH . '/application');
         
         $this->applicationPath = $appPath;
         $this->modulePath = $options['modulePath'] ? 
@@ -68,36 +57,24 @@ class Loader
     {
         Manager::getInstance()->emit(Signals::SIGNAL_BOOTSTRAP);
         
-        set_error_handler(array('Phoenix\Core\Handler','error_handler'));
-        set_exception_handler(array('Phoenix\Core\Handler', 'exception_handler'));
-        
-        
-            if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
-            {
-                require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
-                $this->applicationBootstrap = new \Bootstrap();
+        if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
+        {
+            require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
+            $this->applicationBootstrap = new \Bootstrap();
                 
-                foreach(get_class_methods($this->applicationBootstrap) as $method)
-                {
-                    $this->applicationBootstrap->$method();
-                }
+            foreach(get_class_methods($this->applicationBootstrap) as $method)
+            {
+                $this->applicationBootstrap->$method();
             }
+        }
         
-        return $this;
-        
+        return $this; 
     }
     
     public function run()
     {
-        
         try {
-            Front::getInstance(
-                array(
-                    'applicationPath' => $this->applicationPath,
-                    'controllerPath' => $this->controllerPath,
-                    'modulePath' => $this->modulePath,
-                    'viewPath' => $this->viewPath
-                ))->run();
+            Front::getInstance()->run();
             
             Init::getInstance();
             Manager::getInstance()->emit(Signals::SIGNAL_RUN);

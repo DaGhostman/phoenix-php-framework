@@ -19,20 +19,17 @@ class Front
     
     protected static $_instance;
     
-    public static function getInstance($options)
+    public static function getInstance()
     {
         if (!self::$_instance instanceof Front)
         {
-            self::$_instance = new Front($options);
+            self::$_instance = new Front();
         }
         
         return self::$_instance;
     }
     
-    public function __construct($options = null)
-    {
-        return $this;
-    }
+    private function __construct(){}
     
     
     public function run() {

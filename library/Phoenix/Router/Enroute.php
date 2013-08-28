@@ -67,7 +67,6 @@ class Enroute
             endif;
         endforeach;
         
-        Core::writelog('error.log', 'No route found for: ' . $request->getUri());
         
         HttpErrorsManager::getInstance()->sendError(
                         $response::HTTP_404, 

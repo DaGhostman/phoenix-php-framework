@@ -64,9 +64,9 @@ class Db extends IAdapter {
             SAVE_SESS = 'session';
     
     protected $__identity = null,
-            $__access = null,
-            $__fields = array(),
-            $__tokenField = null;
+                $__access = null,
+                $__fields = array(),
+                $__tokenField = null;
     
     /**
      * Preforms a check for valid ORM object and for an active connection
@@ -168,70 +168,29 @@ class Db extends IAdapter {
      * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SAVE_ALL
      * @return \Phoenix\Auth2\Adapter\Db
      */
-    public function saveIdentity($store = self::SAVE_REG) {
+    public function saveIdentity() {
         
-        switch ($store):
-            case self::SAVE_REG:
-                    foreach ($this->__identity as $key => $value):
-                        Registry::set($key, $value, 'IDENTITY_STORE');
-                    endforeach;
-                    
-                    Manager::getInstance()->emit(
-                        Signals::SIGNAL_AUTH_SAVE_REG,
-                        $this->__identity
-                        );
-                break;
-            case self::SAVE_DB:
-                    $this->__access->update($this->__identity, 
-                            array(
-                                $this->__tokenField => session_id()
-                            ));
-                
-                    Manager::getInstance()->emit(
-                        Signals::SIGNAL_AUTH_SAVE_DB,
-                        $this->__identity
-                        );
-                break;
-            case self::SAVE_SESS:
-                Session::set(session_id(), $this->__identity);
-                
-                Manager::getInstance()->emit(
-                        Signals::SIGNAL_AUTH_SAVE_SESS,
-                        $this->__identity
-                        );
-                break;
-            case self::SAVE_ALL:
-                $this->saveIdentity(self::SAVE_REG);
-                $this->saveIdentity(self::SAVE_DB);
-                $this->saveIdentity(self::SAVE_SESS);
-                
-                Manager::getInstance()->emit(
-                        Signals::SIGNAL_AUTH_SAVE_ALL,
-                        $this->__identity
-                        );
-                break;
-        endswitch;
+        
+        $this->__access->update($this->__identity, array(
+            $this->__tokenField => session_id()
+                ));
+        
+        Session::set('userIdentity', $this->__identity);
         
         return $this;
     }
 
-    public function getIdentity(array $fields = array(), $store = self::SAVE_REG) {
+    public function getIdentity(array $fields = array()) {
         
         if (empty($this->__identity)):
-            switch ($store):
-                case self::SAVE_DB:
-                    $this->__identity = $this->__access->findAll(
+            if (($id = Session::get('userIdentity')) == false):
+                $this->__identity = $id;
+            else:
+                $id = $this->__access->findAll(
                         array($this->__tokenField => session_id())
                         );
-                    $this->__identity = $this->__identity[0];
-                    break;
-                case self::SAVE_REG:
-                    $this->__identity = Registry::raw('IDENTITY_STORE');
-                    break;
-                case self::SAVE_SESS:
-                    Session::get(session_id());
-                    break;
-            endswitch;
+            $this->__identity = $id[0];
+            endif;
         endif;
 
             $id = array();
@@ -305,6 +264,7 @@ class Db extends IAdapter {
         
         return $this;
     }
+    
 
 }
 ?>

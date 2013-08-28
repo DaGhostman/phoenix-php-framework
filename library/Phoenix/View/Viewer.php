@@ -53,7 +53,7 @@ class Viewer implements \ArrayAccess{
         $this->_translate = new Translate();
         $this->uri = $uri;
                 
-                return $this;
+        return $this;
     }
     
     public function setTemplate($templateName)
@@ -110,7 +110,7 @@ class Viewer implements \ArrayAccess{
 	{	
 		if (self::$_instance == false)
 			self::$_instance = new Viewer($uri);
-		elseif (self::$_instance instanceof Viewer)
+		elseif (!self::$_instance instanceof Viewer)
 			self::$_instance = new Viewer($uri);
 		
 		return self::$_instance;
@@ -128,7 +128,10 @@ class Viewer implements \ArrayAccess{
 	
 	public function __get($key)
 	{
-		return @$this->tpl[$key];
+	 if (true == array_key_exists($key, $this->tpl))
+		 return $this->tpl[$key];
+	 else 
+	     return null;
 	}
         
         public function sendOutput($state = false)
@@ -142,11 +145,16 @@ class Viewer implements \ArrayAccess{
             if ($this->output == false) $this->viewContents = '';
             print $this->viewContents;
 	}
+        
+        public static function resetInstance()
+        {
+            self::$_instance = null;
+        }
 
     public function offsetExists($offset) {
         return array_key_exists($offset, $this->tpl);
     }
-
+    
     public function offsetGet($offset) {
         return $this->$offset;
     }

@@ -6,6 +6,7 @@ use Phoenix\Router\Response;
 use Phoenix\Router\MockEnroute;
 use Phoenix\Router\Route;
 use Phoenix\Router\Dispatch;
+use Phoenix\View\Viewer;
 use Phoenix\Core\SignalSlot\Manager;
 use Phoenix\Core\SignalSlot\Signals;
 
@@ -27,24 +28,7 @@ class HttpErrorsManager {
         return self::$_instance;
     }
     
-    private function __construct(){
-        Manager::getInstance()->bind(Signals::SIGNAL_ERROR, function($err){
-                    HttpErrorsManager::getInstance()
-                            ->sendError($err['code'] ? 
-                                    $err['code'] : 500, 
-                                    $err['error'] ? 
-                                    $err['error'] : ''
-                                );
-        });
-        Manager::getInstance()->bind(Signals::SIGNAL_EXCEPTION, function($err){
-                    HttpErrorsManager::getInstance()
-                            ->sendError($err['code'] ? 
-                                    $err['code'] : 500, 
-                                    $err['exception'] ? 
-                                    $err['exception'] : new \Exception('Unknowon Error Occured')
-                                );
-        });
-    }
+    private function __construct(){}
     
     public function setErrorModule($module)
     {
@@ -79,7 +63,6 @@ class HttpErrorsManager {
             'controller' => $this->errorController,
             'action' => $this->errorAction
         ));
-                
         MockEnroute::getInstance(array($route))->addRoute($route);
         $dispatch = new Dispatch;
         $dispatch->dispatch(

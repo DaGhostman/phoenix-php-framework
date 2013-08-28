@@ -8,7 +8,7 @@ use Phoenix\Core\SignalSlot\Signals;
 class Handler {
     public static function error_handler($errno, $errstr, $errfile, $errline){
         Core::getInstance();
-        Manager::getInstance()->emit(Signals::SIGNAL_ERROR, array("code" => 500, "error" => $errno.' '.$errfile.':'.$errline.' '.$errstr));
+        //Manager::getInstance()->emit(Signals::SIGNAL_ERROR, array("code" => 500, "error" => $errno.' '.$errfile.':'.$errline.' '.$errstr));
         
         
         
@@ -28,7 +28,7 @@ class Handler {
     }
     public static function exception_handler($e){
         Core::getInstance();
-        Manager::getInstance()->emit(Signals::SIGNAL_EXCEPTION, array("code" => 500, "exception" => $e));
+        //Manager::getInstance()->emit(Signals::SIGNAL_EXCEPTION, array("code" => 500, "exception" => $e));
         
         if ($e != null | false) {
         $error_string = '=====[' . date("d:m:Y H:i:s") . ']=====' . PHP_EOL;

@@ -47,9 +47,9 @@ class MockEnroute
     }
     
     public function route($request, $response)
-    {    
+    {   
         foreach ($this->routes as $route):
-            if ($route->match($request)):
+            if (true == $route->match($request)):
                 $request->setParams('route', $route->route);
                 $route->load();
                 return $route;

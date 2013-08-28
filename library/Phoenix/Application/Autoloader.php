@@ -53,6 +53,7 @@ class Autoloader {
      * @return \Forge\Application\Autoloader
      */
     public function setIncludePath($path) {
+
         $this->_includePath = $path;
 
         return $this;
@@ -96,7 +97,7 @@ class Autoloader {
      * @return \Forge\Application\Autoloader
      */
     public function register() {
-        spl_autoload_register(array($this, 'autoload'));
+        spl_autoload_register(array($this, 'autoload'), true, true);
 
         return $this;
     }
@@ -142,7 +143,9 @@ class Autoloader {
                 require_once ($this->_includePath ?
                                 $this->_includePath . DIRECTORY_SEPARATOR :
                                 '') . $fileName;
+                
             }
+            
         }
     }
 

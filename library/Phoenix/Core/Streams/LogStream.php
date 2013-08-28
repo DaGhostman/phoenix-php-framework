@@ -55,7 +55,7 @@ class LogStream {
     {
         flock($this->varname, LOCK_EX | LOCK_NB);
         $r = stream_get_contents($this->varname);
-        $l = strlen(&$r);
+        $l = strlen($r);
         $p = &$this->position;
         
         switch($whence):

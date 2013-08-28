@@ -66,7 +66,6 @@ class Route
     
     public function match(Request $request)
     {
-
         if (fnmatch($this->path, $request->getUri()))
         {
             if (is_readable(APPLICATION_PATH . '/modules/'.$this->module.'/Bootstrap.php'))
