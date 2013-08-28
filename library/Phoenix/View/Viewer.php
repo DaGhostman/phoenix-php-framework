@@ -128,10 +128,10 @@ class Viewer implements \ArrayAccess{
 	
 	public function __get($key)
 	{
-	 if (true == array_key_exists($key, $this->tpl))
-		 return $this->tpl[$key];
-	 else 
-	     return null;
+            if (array_key_exists($key, $this->tpl))
+		return $this->tpl[$key];
+            else
+                return null;
 	}
         
         public function sendOutput($state = false)
