@@ -57,6 +57,13 @@ class Loader
     {
         Manager::getInstance()->emit(Signals::SIGNAL_BOOTSTRAP);
         
+<<<<<<< HEAD
+=======
+        set_error_handler(array('Phoenix\Core\Handler','error_handler'));
+        set_exception_handler(array('Phoenix\Core\Handler', 'exception_handler'));
+        
+        
+>>>>>>> 23cab747523c4fea45f463711070042265c1d323
         if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
         {
             require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
