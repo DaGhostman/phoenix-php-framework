@@ -43,7 +43,7 @@ class Cookie {
     
     public function construct()
     {
-        $cfg = new Configurator('application/config/application.ini', true);
+        $cfg = Configurator::getInstance()->parse('application/config/application.ini', true);
         $this->_ttl = $cfg->cookie->ttl ? $cfg->cookie->ttl : 3600;
         $this->_domain = $cfg->cookie->domain ? $cfg->domain : $_SERVER['SERVER_NAME'];
         $this->_path = $cfg->cookie->path ? $cfg->cookie->path : '/';

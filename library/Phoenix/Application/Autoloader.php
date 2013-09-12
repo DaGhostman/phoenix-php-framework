@@ -97,7 +97,7 @@ class Autoloader {
      * @return \Forge\Application\Autoloader
      */
     public function register() {
-        spl_autoload_register(array($this, 'autoload'), true, true);
+        spl_autoload_register(array($this, 'autoload'), true, false);
 
         return $this;
     }
@@ -136,7 +136,7 @@ class Autoloader {
             }
             $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) .
                     $this->_fileExtension;
-
+            
             if (is_readable(($this->_includePath ?
                                     $this->_includePath . DIRECTORY_SEPARATOR :
                                     '') . $fileName)) {

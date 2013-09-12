@@ -1,8 +1,6 @@
 <?php
 
 namespace Phoenix\Router;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
 
 
 class Response {
@@ -72,7 +70,7 @@ class Response {
     
     private static $instance = null;
     
-    public static function getInstance($version = self::V11)
+    public static function &getInstance($version = self::V11)
     {
         if (!self::$instance) self::$instance = new Response($version);
         
@@ -104,10 +102,10 @@ class Response {
                 break;
             case self::HTTP_301:
                 header($this->getVersion() . ' 301 Moved Permanently', true, 301);
-                header ('Location: '.$argc, true);
+                header ('Location: '.$argc, true, 301);
                 break;
             case self::HTTP_302:
-                header ('Location: '.$argc, true);
+                header ('Location: '.$argc, true, 302);
                 break;
             case self::HTTP_401:
                 header($this->getVersion() . ' 401 Unauthorized', true, 401);
@@ -143,7 +141,6 @@ class Response {
     public function send()
     {
         if(!headers_sent()):
-            Manager::getInstance()->emit(Signals::SIGNAL_RESPONSE);
             foreach ($this->headers as $header):
                 header($header, true);
             endforeach;

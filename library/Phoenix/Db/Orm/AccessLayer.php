@@ -70,6 +70,7 @@ abstract class AccessLayer {
     
     final public function update(array $bind, array $conditions)
     {
+        
         $this->getAdapter()->update($this->entityTable, $bind, $conditions);
         
         return $this;

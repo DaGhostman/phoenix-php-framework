@@ -3,12 +3,10 @@ namespace Phoenix\Core;
 
 use Phoenix\Router\Request;
 use Phoenix\Router\Response;
-use Phoenix\Router\MockEnroute;
+use Phoenix\Router\Enroute;
 use Phoenix\Router\Route;
 use Phoenix\Router\Dispatch;
-use Phoenix\View\Viewer;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
+use Phoenix\Router\Mapper;
 
 class HttpErrorsManager {
     private static $_instance = null;
@@ -54,19 +52,20 @@ class HttpErrorsManager {
         
         $response = Response::getInstance();
         
-        $request = Request::getInstance($_SERVER['REQUEST_URI'], array());
+        $request = Request::getInstance();
         $request->setParams('error', $e);
         $request->setParams('header', $http_code);
-            
-        $route = new Route($_SERVER['REQUEST_URI'], array(
-            'module' => $this->errorModule,
-            'controller' => $this->errorController,
-            'action' => $this->errorAction
+
+        var_dump($e);
+        
+        Mapper::getInstance()->addMap(Request::getInstance()->getUri(), array(
+        	'module' => 'main',
+        	'controller' => 'error',
+        	'action' => 'index'
         ));
-        MockEnroute::getInstance(array($route))->addRoute($route);
         $dispatch = new Dispatch;
         $dispatch->dispatch(
-                MockEnroute::getInstance()->route(
+                Enroute::getInstance()->route(
                     $request, 
                     $response
                 ),

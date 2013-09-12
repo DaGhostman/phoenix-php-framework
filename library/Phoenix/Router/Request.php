@@ -4,11 +4,11 @@ namespace Phoenix\Router;
 
 class Request {
     
-    const REQ_GET = 'GET';
-    const REQ_POST = 'POST';
-    const REQ_PUT = 'PUT';
-    const REQ_DELETE = 'DELETE';
-    const REQ_HEAD = 'HEAD';
+    const REQ_GET       = 'GET';
+    const REQ_POST      = 'POST';
+    const REQ_PUT       = 'PUT';
+    const REQ_DELETE    = 'DELETE';
+    const REQ_HEAD      = 'HEAD';
     
     protected $uri,
             $params = array(), 
@@ -33,19 +33,21 @@ class Request {
      * @throws \InvalidArgumentException
      * @return \Forge\Router\Request
      */
-    private function __construct($uri, $params = array())
+    private function __construct($params = array())
     {
         $params = !empty($params) ? $params : array();
         
-        $url = ($_SERVER['SERVER_PORT'] == 80 ? 'http://' : 'https://') . 
-                    $_SERVER['SERVER_NAME'];
+        $protocol = ( isset($_SERVER['HTTPS'] )  && $_SERVER['HTTPS'] != 'off' ) ? 'https://' : 'http://';
         
-        if(!filter_var($url.$uri, FILTER_VALIDATE_URL))
+        $url = $protocol . $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].$_SERVER['QUERY_STRING'];
+        
+        if(!filter_var($url, FILTER_VALIDATE_URL))
         {
             throw new \InvalidArgumentException('Invalid URL');
         }
-        // The protocol, user, password, host
-        $x = parse_url($url.$uri);
+
+        
+        $x = parse_url($url);
         $this->urlComponents = $x;
         $this->serverName = $x['host'];
         $this->domainComponents = array();
@@ -69,7 +71,7 @@ class Request {
             $this->setParams($key, $value);
         }
         
-        $this->uri = $uri;
+        $this->uri = (array_key_exists('path',$x)) ? $x['path'] : '/';
         
         return $this;
     }
@@ -118,10 +120,10 @@ class Request {
     private function get($key, $switch)
     {
         switch ($switch):
-            case 'get':
+            case 'param':
                 return $this->getParam($key);
                 break;
-            case 'fetch':
+            case 'domain':
                 return $this->urlComponents[$key];
                 break;
             default:

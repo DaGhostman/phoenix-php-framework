@@ -2,9 +2,6 @@
 
 namespace Phoenix\Application;
 
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
-
 class Core {
     
     private static $_instance = null;
@@ -54,26 +51,6 @@ class Core {
             }
         }
     }
-
-    ###### END ######
-    #################
-    #### Logging ####
-    ##### BEGIN #####
-
-    public static function writelog($logfile, $message)
-    {
-        
-        
-        self::$_fp = fopen("log://{$logfile}", "ab");
-        $len = strlen($message . PHP_EOL) + 1;
-        fwrite(self::$_fp, $message . PHP_EOL, $len);
-        fclose(self::$_fp);
-    }
-    
-    ###### END ######
-    #################
-    #### PLUGINS ####
-    ##### BEGIN #####
     
     
 

@@ -30,7 +30,7 @@ use Phoenix\Application\Exception\IException;
 class Runtime extends \Exception implements IException {
 
     public function __toString() {
-        $err_string = "<strong>Error while trying to run the application occured</strong> Message: <strong>";
+        $err_string = "<strong>Error while trying to run the application</strong> Message: <strong>";
         $err_string .= $this->getMessage() . "</strong> Code:<strong>" . $this->getCode();
         $err_string .= "</strong> File:<strong>" . $this->getFile() . "</strong> Line:<strong>" ;
         $err_string .= $this->getLine() . "</strong>";

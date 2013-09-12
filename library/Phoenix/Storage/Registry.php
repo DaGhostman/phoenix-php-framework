@@ -29,17 +29,17 @@ class Registry
     
     public static function setNamespace($namespace)
     {
-        self::$_registry['$namespace'] = array();
+        self::$_registry[$namespace] = array();
     }
     
-    public static function set($key, $value, $namespace = 'defaultRegistry')
+    public static function set($key, &$value, $namespace = 'defaultRegistry')
     {
         if (empty(self::$_registry)) self::getInstance();
         if (array_key_exists($namespace, self::$_registry)) self::setNamespace($namespace);
         self::$_registry[$namespace][$key] = $value;
     }
     
-    public static function get($key, $namespace='defaultRegistry')
+    public static function &get($key, $namespace='defaultRegistry')
     {
         if (array_key_exists($namespace, self::$_registry)):
             if (array_key_exists($key, self::$_registry[$namespace])):

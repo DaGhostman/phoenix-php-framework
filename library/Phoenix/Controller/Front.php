@@ -6,8 +6,6 @@ use Phoenix\Router\Response;
 use Phoenix\Router\Request;
 use Phoenix\Router\Dispatch;
 use Phoenix\Core\HttpErrorsManager;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
 
 class Front
 {
@@ -33,21 +31,19 @@ class Front
     
     
     public function run() {
-        $request = Request::getInstance($_SERVER['REQUEST_URI'], 
+        $request = Request::getInstance( 
                 ($_GET ? $_GET : ($_POST ? $_POST : array()))
                 );
         $response = Response::getInstance();
         $dispatch = new Dispatch;
         
         try {
-            Manager::getInstance()->emit(Signals::SIGNAL_DISPATCH);
         $dispatch->dispatch( 
                 Enroute::getInstance()->route($request, $response), 
                 $request, $response
                 );
         } catch (\OutOfRangeException $e)
         {
-            Manager::getInstance()->emit(Signals::SIGNAL_DISPATCH_ERR, $e);
             HttpErrorsManager::getInstance()->sendError(Response::HTTP_404, $e);
         }
     }

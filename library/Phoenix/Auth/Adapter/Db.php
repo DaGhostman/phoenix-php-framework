@@ -32,9 +32,6 @@ use Phoenix\Auth\Adapter\IAdapter;
 use Phoenix\Db\Orm\AccessLayer;
 use Phoenix\Core\HttpErrorsManager;
 use Phoenix\Router\Response;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
-use Phoenix\Storage\Registry;
 use Phoenix\Storage\Session;
 
 
@@ -50,8 +47,6 @@ use Phoenix\Storage\Session;
  * @uses Phoenix\Db\Orm\AccessLayer
  * @uses Phoenix\Core\HttpErrorsManager
  * @uses Phoenix\Router\Response
- * @uses Phoenix\Core\SignalSlot\Manager
- * @uses Phoenix\Core\SignalSlot\Signals
  * @uses Phoenix\Storage\Registry
  * @uses Phoenix\Storage\Session
  */
@@ -124,27 +119,19 @@ class Db extends IAdapter {
      * @see Db::setIdentity();
      * 
      * @access public
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SUCCESS
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_FAIL
      * @return \Phoenix\Auth2\Adapter\Db
      */
     public function authenticate() {
+        
         $this->__identity = $this->__access->findAll($this->__fields);
-        $this->__identity = $this->__identity[0];
+        $this->__identity = isset($this->__identity[0]) ? $this->__identity[0] : $this->__identity;
         
         if (!empty($this->__identity)):
-            Manager::getInstance()
-            ->emit(Signals::SIGNAL_AUTH_SUCCESS, 
-                    $this->__identity);
         
         $this->__access->update(
                 array($this->__tokenField => session_id()), 
                 $this->__fields
                 );
-        else:
-            Manager::getInstance()
-                ->emit(Signals::SIGNAL_AUTH_FAIL,
-                        $this->__fields);
         endif;
         
         return $this;
@@ -162,18 +149,9 @@ class Db extends IAdapter {
      * 
      * Db will update the user profile with the changes which will be permanent
      * 
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SAVE_REG
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SAVE_SESS
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SAVE_DB
-     * @emits \Phoenix\Core\SignalSlot\Signals::SIGNAL_AUTH_SAVE_ALL
      * @return \Phoenix\Auth2\Adapter\Db
      */
     public function saveIdentity() {
-        
-        
-        $this->__access->update($this->__identity, array(
-            $this->__tokenField => session_id()
-                ));
         
         Session::set('userIdentity', $this->__identity);
         
@@ -183,13 +161,13 @@ class Db extends IAdapter {
     public function getIdentity(array $fields = array()) {
         
         if (empty($this->__identity)):
-            if (($id = Session::get('userIdentity')) == false):
+            if (($id = Session::get('userIdentity')) != false):
                 $this->__identity = $id;
             else:
                 $id = $this->__access->findAll(
                         array($this->__tokenField => session_id())
                         );
-            $this->__identity = $id[0];
+                $this->__identity = isset($id[0]) ? $id[0] : $id;
             endif;
         endif;
 

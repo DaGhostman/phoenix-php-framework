@@ -1,8 +1,6 @@
 <?php
 
 namespace Phoenix\Db;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
 use Phoenix\Application\Configurator;
 
 class Factory {
@@ -18,7 +16,7 @@ class Factory {
     
     public function __construct($connection = array())
     {
-        $cfg = new Configurator('/application/config/application.ini', Configurator::CONFIG_INI);
+        $cfg = Configurator::getInstance()->parse('/application/config/application.ini', Configurator::CONFIG_INI);
         
         $this->engine = isset($connection['engine']) ? $connection['engine'] : ($cfg->db->engine ? $cfg->db->engine : 'mysql');
         switch($this->engine):
@@ -65,8 +63,6 @@ class Factory {
             
             $this->link->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->link->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            
-            Manager::getInstance()->emit(Signals::SIGNAL_DB_CONNECT);
         } catch (\PDOException $e) {
             throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
         }
@@ -99,7 +95,6 @@ class Factory {
     
     public function execute(array $params = array())
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_DB_EXECUTE, array('sql' => $this->statement->queryString, 'params' => $params));
         if ($this->isConnected() == false)
             $this->connect();
         try {
@@ -179,8 +174,9 @@ class Factory {
     public function update($table, array $bind, array $conditions = array())
     {
         
-        if ($this->isConnected() == false)
+        if ($this->isConnected() == false) {
             $this->connect();
+        }
         
         $set = array();
         
@@ -191,12 +187,10 @@ class Factory {
         endforeach;
         
         if (is_array($conditions) && !empty($conditions)):
-            $ai = new \ArrayIterator($conditions);
-            $condition = array();
-            while(($ai->count()-1) > 0):
-                $condition[] = $ai->key().'='.$ai->current();
-                $ai->offsetUnset($ai->key());
-            endwhile;
+            foreach($conditions as $k => $v) {
+                $condition[] = $k.'= :'. $k;
+                $bind[':'.$k] = $v;
+            }
             
             $where = implode(' AND ', $condition);
         endif;
@@ -261,7 +255,6 @@ class Factory {
     
     public function commit()
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_DB_COMMIT);
         if ($this->inTransaction != false):
             try {
                 $this->link->commit();
@@ -276,7 +269,6 @@ class Factory {
     
     public function rollBack()
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_DB_ROLLBACK);
         if ($this->inTransaction != false):
         try {
             $this->link->rollBack();
@@ -298,7 +290,6 @@ class Factory {
     
     public function disconnect()
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_DB_DISCONNECT);
         return $this->link->close($this->link);
         return null;
     }
@@ -321,6 +312,21 @@ class Factory {
         else
             return true;
     }
+    
+    public function __sleep()
+    {
+        return array(
+        	$this->dsn
+        );
+    }
+    
+    
+    public function __wakeup()
+    {
+        $this->connect();
+    }
+    
+    
 }
 
 ?>

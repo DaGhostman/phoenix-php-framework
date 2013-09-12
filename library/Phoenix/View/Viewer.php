@@ -29,7 +29,6 @@ namespace Phoenix\View;
 
 use Phoenix\Core\HttpErrorsManager;
 use Phoenix\View\Translate;
-use Phoenix\Router\Response;
 class Viewer implements \ArrayAccess{
     
     private static $_instance = null;
@@ -49,8 +48,8 @@ class Viewer implements \ArrayAccess{
     
     protected function __construct($uri)
     {
-        $this->_helper = new Helper;
-        $this->_translate = new Translate();
+        //$this->_helper = new Helper;
+        
         $this->uri = $uri;
                 
         return $this;
@@ -70,39 +69,49 @@ class Viewer implements \ArrayAccess{
         $controller = $this->uri['controller'];
         $action = ($this->view ? $this->view : $this->uri['action']);
         
+        $conf = \Phoenix\Storage\Registry::get('config', 'SystemCFG');
+        
         try {
             if (is_readable(APPLICATION_PATH . '/modules/'.$module.'/views/'.$controller.'/'.$action.'.phtml')):
-                        ob_start();
-                include_once(APPLICATION_PATH . 
-                    '/modules/' . $module . 
-                    '/views/' . $controller . 
-                    '/' . $action . '.phtml'
+
+                ob_start();
+                include_once(APPLICATION_PATH . $conf['application.module.path'] .
+                     DIRECTORY_SEPARATOR . $module . $conf['application.view.path'] .
+                     DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR
+                     . $action . '.phtml'
                     );
                 $this->viewContents = $this->compress(ob_get_contents());
                 ob_end_clean();
             else:
                 throw new \OutOfRangeException(
-                    'Unable to find the template for the page: ' . 
+                    'Unable to find the template for : ' . 
                     $_SERVER['HTTP_HOST'] . '/' . $module . '/' . 
                     $controller . '/' . $action
                     );
             endif;
             
         } catch (\OutOfRangeException $e) {
-            HttpErrorsManager::getInstance()->sendError(Response::HTTP_404, $e);
+            HttpErrorsManager::getInstance()->sendError(404, $e);
             
         }
     }
         
         public function compress($content) {
-                $trimmer = array();
-                foreach(explode(PHP_EOL, $content) as $line)
-                {
-                    $trimmer[] = trim($line);
-                }
-                $trimed = implode(PHP_EOL, $trimmer);
-                $minified = str_replace('  ', '', preg_replace('/<!--(.*)-->/Uis', '', $trimed, -1));
-                    return $minified;
+            $search = array(
+                '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+                '/[^\S ]+\</s',  // strip whitespaces before tags, except space
+                '/(\s)+/s'       // shorten multiple whitespace sequences
+            );
+            
+            $replace = array(
+                '>',
+                '<',
+                '\\1'
+            );
+            
+            $trimed = preg_replace($search, $replace, &$content);
+            $minified = preg_replace('/<!--(.*)-->/Uis', '', &$trimed, -1);
+            return $minified;
     }
 	
 	
@@ -128,10 +137,10 @@ class Viewer implements \ArrayAccess{
 	
 	public function __get($key)
 	{
-	 if (true == array_key_exists($key, $this->tpl))
-		 return $this->tpl[$key];
-	 else 
-	     return null;
+            if (array_key_exists($key, $this->tpl))
+		return $this->tpl[$key];
+            else
+                return null;
 	}
         
         public function sendOutput($state = false)
@@ -169,6 +178,11 @@ class Viewer implements \ArrayAccess{
     #Language warpers
     
     public function translate($string) {
+        
+        if (empty($this->_translate)) {
+            $this->_translate = Translate::getInstance();
+        }
+        
         return $this->_translate->translate($string);
     }
     

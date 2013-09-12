@@ -35,71 +35,65 @@ class Translate {
     protected $lang = 'en';
     protected $xml = null;
 
-    public function __construct() {
+    protected static $_instance = null;
+    
+    public static function getInstance()
+    {
+        if (empty(self::$_instance))
+            self::$_instance = new Translate ();
+        
+        
+        return self::$_instance;
+    }
+    
+    protected function __construct() {
         
         $this->lang = $this->getPrefferedLanguage();
-        
-        $this->parse();
     }
     
     public function translate($string)
     {
-            if($this->xml != null):
+        if (empty($this->xml)) {
+            $this->parse();
+        }
+        
+            if($this->xml != null) {
                 $seg = $this->xml->xpath(
                         '//tu[@id="' . $string . '"]/tuv[@lang="' . $this->lang . '"]'
                         );
             
-                return $seg[0]->seg[0];
-            else:
+                if (($seg == false) || (empty($seg))) {
+                	$seg = $this->xml->xpath(
+                        '//entry[@id="' . $string . '"][@lang="' . $this->lang . '"]'
+                        );
+                	
+                	$result = $seg[0];
+                } else {
+                        $result = $seg[0]->seg[0];
+                }
+            } else {
                 return $string;
-            endif;
+            }
 	
-        return $string;
+            
+        return $result ? $result : $string;
     }
     
     protected function parse()
     {
         $filename = REAL_PATH . $this->dir . 
                                 $this->lang . '.xml';
-        if (defined('SYSTEM_CACHE')):
-            switch (SYSTEM_CACHE):
-                case 'APC':
-                    
-                    $cache = APC::getInstance()->get('language-'.$this->lang);
-                    if ($cache != FALSE)
-                        $this->xml = new \SimpleXMLElement($cache);
-                    else {
-                        if (is_file($filename) && 
-                                is_readable($filename))
-                            $this->xml = new \SimpleXMLElement(
-                                    $filename, NULL, TRUE);
-                            
-                        else
-                            throw new \RuntimeException($filename . 
-                                    ' could not be opened for parsing');
-                    }
-                    break;
-                default:
-                    throw new \RuntimeException('Unsupported caching instance');
-            endswitch;
-        else:
-            if (is_file($filename) && is_readable($filename))
-                $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
-            
-            if (defined('SYSTEM_CACHE')):
-                if (SYSTEM_CACHE === 'APC' && 
-                !APC::getInstance()->exists('language-'.$this->lang))
-                    APC::getInstance ()
-                        ->set('language-'.$this->lang, 
-                                $this->xml->asXML ());
-            endif;
-        endif;
+        
+        if (is_file($filename) && is_readable($filename))
+            $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
+        
+        
         return; 
     }
 
     public function getPrefferedLanguage()
     {
-        $cfg = new Configurator();
+        $cfg = Configurator::getInstance()->parse();
         
         $websiteLanguages = array();
         $raw = $cfg->raw();

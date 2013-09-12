@@ -2,10 +2,7 @@
 namespace Phoenix\Application;
 
 use Phoenix\Controller\Front;
-use Phoenix\Application\Core;
-use Phoenix\Plugin\Init;
-use Phoenix\Core\SignalSlot\Manager;
-use Phoenix\Core\SignalSlot\Signals;
+use Phoenix\Storage\Registry;
 
 
 class Loader
@@ -25,48 +22,48 @@ class Loader
      * @throws \Phoenix\Application\Exception
      * @return \Phoenix\Application\Loader
      */
-    public function __construct($appPath =  'application', $options = array())
+    public function __construct($config)
     {
+        $conf = $config->raw();
         
-        Manager::getInstance()->emit(Signals::SIGNAL_INIT);
-        Core::getInstance();
+        Registry::set('config', $conf['core'], 'SystemCFG');
         
-        if (!in_array('log', stream_get_wrappers())) {
-            stream_register_wrapper("log", 
-                    "Phoenix\Core\Streams\LogStream");
-            
+        if (array_key_exists('application.path', $conf['core'])){
+            if (!defined('APPLICATION_PATH')) {
+                define ('APPLICATION_PATH', $conf['core']['application.path']);
+            }
+        } else {
+            if (!defined('APPLICATION_PATH')) 
+            define('APPLICATION_PATH', REAL_PATH . '/application');
         }
         
-        if (!defined('APPLICATION_PATH')) 
-            define('APPLICATION_PATH', REAL_PATH . '/application');
+        if (array_key_exists('application.module.path', $conf['core'])) {
+            $this->modulePath = $conf['core']['application.module.path'];
+        } else {
+            $this->modulePath = 'modules/';
+        }
         
-        $this->applicationPath = $appPath;
-        $this->modulePath = $options['modulePath'] ? 
-                $options['modulePath'] : 'modules/';
+        if (array_key_exists('application.controller.path', $conf['core'])) {
+            $this->controllerPath = $conf['core']['application.controller.path'];
+        } else {
+            $this->controllerPath = 'controllers/';
+        }
         
-        $this->controllerPath = $options['controllerPath'] ? 
-                $options['controllerPath'] : 'controllers/';
-        
-        $this->viewPath = $options['viewPath'] ? 
-                $options['viewPath'] : 'views/';
+        if (array_key_exists('application.view.path', $conf['core'])) {
+            $this->viewPath = $conf['core']['application.view.path'];
+        } else {
+            $this->viewPath = 'views/';
+        }
         
         return $this;
     }
     
     public function bootstrap()
     {
-        Manager::getInstance()->emit(Signals::SIGNAL_BOOTSTRAP);
         
-<<<<<<< HEAD
-=======
-        set_error_handler(array('Phoenix\Core\Handler','error_handler'));
-        set_exception_handler(array('Phoenix\Core\Handler', 'exception_handler'));
-        
-        
->>>>>>> 23cab747523c4fea45f463711070042265c1d323
-        if(is_readable(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
+        if(is_readable(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'Bootstrap.php'))
         {
-            require_once(REAL_PATH . DIRECTORY_SEPARATOR . $this->applicationPath . DIRECTORY_SEPARATOR . 'Bootstrap.php');
+            require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'Bootstrap.php');
             $this->applicationBootstrap = new \Bootstrap();
                 
             foreach(get_class_methods($this->applicationBootstrap) as $method)
@@ -82,9 +79,6 @@ class Loader
     {
         try {
             Front::getInstance()->run();
-            
-            Init::getInstance();
-            Manager::getInstance()->emit(Signals::SIGNAL_RUN);
         } catch (\Exception $e) {
             throw new \RuntimeException("Exception occured while trying to run the application", null, $e);
         }

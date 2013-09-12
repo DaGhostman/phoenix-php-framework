@@ -8,7 +8,7 @@ class Ini implements \ArrayAccess {
     {
         if (is_file($filepath) & is_readable($filepath)):
             $content = parse_ini_file($filepath, $parse);
-            $this->raw = $content;
+            $this->raw = &$content;
             $this->contents = $this->toObject($content);
         endif;
         
