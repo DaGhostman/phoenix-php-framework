@@ -58,26 +58,29 @@ class Route
         if ($this->module == ':module') {
             $module = isset($entries[0]) ? $entries[0] : $this->defaultModule;
             unset($entries[0]);
+            $entries = array_values($entries);
         } else {
             $module = &$this->module;
         }
         
         if ($this->controller == ':controller') {
-            $controller = isset($entries[1]) ? $entries[1] : $this->defaultController;
-            unset($entries[1]);
+            $controller = isset($entries[0]) ? $entries[0] : $this->defaultController;
+            unset($entries[0]);
+            $entries = array_values($entries);
         } else {
             $controller = &$this->controller;
         }
         
         if ($this->action == ':action') {
-            $action = isset($entries[2]) ? $entries[2] : $this->defaultAction;
-            unset($entries[2]);
+            $action = isset($entries[0]) ? $entries[0] : $this->defaultAction;
+            unset($entries[0]);
+            $entries = array_values($entries);
         } else {
             $action = $this->action;
         }
         
         
-        for ($i=0; $i<count(array_values($entries)); $i++):
+        for ($i=0; $i<count($entries); $i++):
         $slice = array_values(array_slice(array_values($entries), $i*2, 2));
         if (!empty($slice))
             Request::getInstance()->setParams($slice[0], $slice[1]);
@@ -111,7 +114,7 @@ class Route
                 'controller' => $this->controller,
                 'action' => $this->action
             );
-            Request::getInstance()->setParams('route', $this->route);
+            Request::getInstance()->setRoute($this->route);
         
         
         $controllerClass = REAL_PATH .'/application/modules/';

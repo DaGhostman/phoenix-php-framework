@@ -13,7 +13,7 @@ class Action
         $this->view = Viewer::getInstance($uri['route']);  
         $this->view->sendOutput(true);
         
-        $x = Request::getInstance()->getParam('route');
+        $x = Request::getInstance()->getRoute();
         $mainModuleAutoloader = new Autoloader();
         $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'modules' .
             DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR . 'models')->register();

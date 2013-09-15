@@ -28,6 +28,7 @@
 namespace Phoenix\View;
 
 use Phoenix\Core\HttpErrorsManager;
+use Phoenix\Router\Request;
 use Phoenix\View\Translate;
 class Viewer implements \ArrayAccess{
     
@@ -48,9 +49,7 @@ class Viewer implements \ArrayAccess{
     
     protected function __construct($uri)
     {
-        //$this->_helper = new Helper;
-        
-        $this->uri = $uri;
+        $this->uri = Request::getInstance()->getRoute();
                 
         return $this;
     }
@@ -64,35 +63,35 @@ class Viewer implements \ArrayAccess{
     
     private function prepare()
     {
+        if ($this->output != false) {
+            $module = $this->uri['module'];
+            $controller = $this->uri['controller'];
+            $action = ($this->view ? $this->view : $this->uri['action']);
         
-        $module = $this->uri['module'];
-        $controller = $this->uri['controller'];
-        $action = ($this->view ? $this->view : $this->uri['action']);
+            $conf = \Phoenix\Storage\Registry::get('config', 'SystemCFG');
         
-        $conf = \Phoenix\Storage\Registry::get('config', 'SystemCFG');
-        
-        try {
-            if (is_readable(APPLICATION_PATH . '/modules/'.$module.'/views/'.$controller.'/'.$action.'.phtml')):
+            try {
+                if (is_readable(APPLICATION_PATH . '/modules/'.$module.'/views/'.$controller.'/'.$action.'.phtml')):
 
-                ob_start();
-                include_once(APPLICATION_PATH . $conf['application.module.path'] .
-                     DIRECTORY_SEPARATOR . $module . $conf['application.view.path'] .
-                     DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR
-                     . $action . '.phtml'
-                    );
-                $this->viewContents = $this->compress(ob_get_contents());
-                ob_end_clean();
-            else:
-                throw new \OutOfRangeException(
-                    'Unable to find the template for : ' . 
-                    $_SERVER['HTTP_HOST'] . '/' . $module . '/' . 
-                    $controller . '/' . $action
-                    );
-            endif;
+                    ob_start();
+                    include_once(APPLICATION_PATH . $conf['application.module.path'] .
+                        DIRECTORY_SEPARATOR . $module . $conf['application.view.path'] .
+                        DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR
+                        . $action . '.phtml'
+                        );
+                    $this->viewContents = $this->compress(ob_get_contents());
+                    ob_end_clean();
+                else:
+                    throw new \OutOfRangeException(
+                        'Unable to find the template for : ' . 
+                        $_SERVER['HTTP_HOST'] . '/' . $module . '/' . 
+                        $controller . '/' . $action
+                        );
+                endif;
             
-        } catch (\OutOfRangeException $e) {
-            HttpErrorsManager::getInstance()->sendError(404, $e);
-            
+            } catch (\OutOfRangeException $e) {
+                HttpErrorsManager::getInstance()->sendError(404, $e);
+            }
         }
     }
         
@@ -143,10 +142,10 @@ class Viewer implements \ArrayAccess{
                 return null;
 	}
         
-        public function sendOutput($state = false)
-        {
-            $this->output = $state;
-        }
+    public function sendOutput($state = false)
+    {
+        $this->output = $state;
+    }
 	
 	public function render()
 	{

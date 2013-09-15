@@ -1,7 +1,6 @@
 <?php
 namespace Phoenix\Controller;
 
-use Phoenix\Router\Enroute;
 use Phoenix\Router\Response;
 use Phoenix\Router\Request;
 use Phoenix\Router\Dispatch;
@@ -38,10 +37,9 @@ class Front
         $dispatch = new Dispatch;
         
         try {
-        $dispatch->dispatch( 
-                Enroute::getInstance()->route($request, $response), 
+            $dispatch->dispatch(
                 $request, $response
-                );
+            );
         } catch (\OutOfRangeException $e)
         {
             HttpErrorsManager::getInstance()->sendError(Response::HTTP_404, $e);

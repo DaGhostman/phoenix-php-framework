@@ -56,7 +56,6 @@ class HttpErrorsManager {
         $request->setParams('error', $e);
         $request->setParams('header', $http_code);
 
-        var_dump($e);
         
         Mapper::getInstance()->addMap(Request::getInstance()->getUri(), array(
         	'module' => 'main',
@@ -65,10 +64,6 @@ class HttpErrorsManager {
         ));
         $dispatch = new Dispatch;
         $dispatch->dispatch(
-                Enroute::getInstance()->route(
-                    $request, 
-                    $response
-                ),
                     $request, 
                     $response
                 );

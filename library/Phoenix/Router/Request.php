@@ -14,7 +14,8 @@ class Request {
             $params = array(), 
             $serverName,
             $domainComponents,
-            $urlComponents;
+            $urlComponents,
+            $__route;
     
     private static $instance = null;
     
@@ -219,6 +220,16 @@ class Request {
     public function getParams()
     {
         return $this->params;
+    }
+    
+    public function setRoute($route)
+    {
+        $this->__route = $route;
+    }
+    
+    public function getRoute()
+    {
+        return $this->__route;
     }
     
 }
