@@ -18,7 +18,10 @@ class Session
     {
         new Session($options);
         
-        if (!session_id()) { session_start(); }
+        if (!session_id()) { 
+            session_start(); 
+            $_SESSION['DEFAULT'] = array(); 
+        }
     }
     
     public static function set($key, $value)

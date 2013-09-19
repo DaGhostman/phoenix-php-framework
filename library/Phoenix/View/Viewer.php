@@ -47,10 +47,10 @@ class Viewer implements \ArrayAccess{
         
     public $compile = FALSE;
     
-    protected function __construct($uri)
+    protected function __construct()
     {
         $this->uri = Request::getInstance()->getRoute();
-                
+
         return $this;
     }
     
@@ -108,8 +108,8 @@ class Viewer implements \ArrayAccess{
                 '\\1'
             );
             
-            $trimed = preg_replace($search, $replace, &$content);
-            $minified = preg_replace('/<!--(.*)-->/Uis', '', &$trimed, -1);
+            $trimed = preg_replace($search, $replace, $content);
+            $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed, -1);
             return $minified;
     }
 	

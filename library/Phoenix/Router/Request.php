@@ -15,7 +15,7 @@ class Request {
             $serverName,
             $domainComponents,
             $urlComponents,
-            $__route;
+            $__route = null;
     
     private static $instance = null;
     

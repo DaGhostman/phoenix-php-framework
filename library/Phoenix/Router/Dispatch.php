@@ -15,9 +15,6 @@ class Dispatch {
         
         if (($route = Mapper::getInstance()->map($request->getUri())) != false) {
             $route->load();
-            $request->setParams('module', $route->getModule());
-            $request->setParams('controller', $route->getController());
-            $request->setParams('action', $route->getAction());
         } else {
             HttpErrorsManager::getInstance()
             ->sendError(

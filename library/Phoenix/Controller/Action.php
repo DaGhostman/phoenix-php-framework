@@ -10,7 +10,7 @@ class Action
     final public function __construct()
     {
         $uri = Request::getInstance()->getParams();
-        $this->view = Viewer::getInstance($uri['route']);  
+        $this->view = Viewer::getInstance();  
         $this->view->sendOutput(true);
         
         $x = Request::getInstance()->getRoute();
@@ -23,7 +23,7 @@ class Action
     final public function __destruct()
     {
         $uri = Request::getInstance()->getParams();
-        $this->view = Viewer::getInstance($uri['route']); 
+        $this->view = Viewer::getInstance(); 
         $this->view->render();
     }
 

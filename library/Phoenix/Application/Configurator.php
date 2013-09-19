@@ -23,6 +23,11 @@ class Configurator {
         return self::$_instance;
     }
     
+    public function getConfigurator()
+    {
+        return clone Configurator::getInstance();
+    }
+    
     public function parse($filename = '/application/config/application.ini', $type = self::CONFIG_INI)
     {
         
