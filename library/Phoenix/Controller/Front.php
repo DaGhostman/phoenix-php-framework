@@ -6,6 +6,7 @@ use Phoenix\Router\Request;
 use Phoenix\Router\Dispatch;
 use Phoenix\Core\HttpErrorsManager;
 
+
 class Front
 {
     
@@ -28,7 +29,10 @@ class Front
     
     private function __construct(){}
     
-    
+    /**
+     * Triggers the Dispatcher and inits the instances
+     * of Request and Response.
+     */
     public function run() {
         $request = Request::getInstance( 
                 ($_GET ? $_GET : ($_POST ? $_POST : array()))

@@ -54,13 +54,14 @@ class Route
     public function load()
     {
         
-        $entries=array_merge(array(), array_filter(explode('/', str_replace(rtrim($this->path,'*'),'',Request::getInstance()->getUri()))));
+        $entries=explode('/', preg_replace('#'.rtrim($this->path,'*').'#i','',Request::getInstance()->getUri(),1));
+        
         if ($this->module == ':module') {
             $module = isset($entries[0]) ? $entries[0] : $this->defaultModule;
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
-            $module = &$this->module;
+            $module = $this->module;
         }
         
         if ($this->controller == ':controller') {
@@ -68,7 +69,7 @@ class Route
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
-            $controller = &$this->controller;
+            $controller = $this->controller;
         }
         
         if ($this->action == ':action') {
@@ -90,7 +91,6 @@ class Route
         $this->controller = $controller;
         $this->action = $action;
         
-        
         if (is_readable(APPLICATION_PATH . $this->modulePath .
             DIRECTORY_SEPARATOR . $this->module .
             $this->controllerPath . DIRECTORY_SEPARATOR .
@@ -98,6 +98,8 @@ class Route
         {
             $this->controllerClass = ucfirst($this->controller).'Controller';
         
+            
+            
             if (is_readable(APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php'))
             {
                 require_once APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php';

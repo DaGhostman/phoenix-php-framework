@@ -29,7 +29,7 @@
 
 namespace Phoenix\Auth\Adapter;
 use Phoenix\Auth\Adapter\IAdapter;
-use Phoenix\Db\Orm\AccessLayer;
+use Phoenix\Db\Crud\AccessLayer;
 use Phoenix\Core\HttpErrorsManager;
 use Phoenix\Router\Response;
 use Phoenix\Storage\Session;
@@ -153,12 +153,16 @@ class Db extends IAdapter {
      */
     public function saveIdentity() {
         
+        $this->__access->update(
+            array($this->__tokenField => session_id()),
+            $this->__fields
+        );
         Session::set('userIdentity', $this->__identity);
         
         return $this;
     }
 
-    public function getIdentity(array $fields = array()) {
+    public function getIdentity() {
         
         if (empty($this->__identity)):
             if (($id = Session::get('userIdentity')) != false):
@@ -171,18 +175,7 @@ class Db extends IAdapter {
             endif;
         endif;
 
-            $id = array();
-        
-            if (!empty($fields)):
-                foreach ($fields as $field):
-                $id[$field] = $this->__identity[$field];
-                endforeach;
-            
-                return $id;
-            
-            else:
-                return $this->__identity;
-            endif;
+        return $this->__identity;
         
     }
 

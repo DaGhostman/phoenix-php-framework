@@ -57,6 +57,7 @@ class HttpErrorsManager {
         $request->setParams('header', $http_code);
 
         
+        Mapper::getInstance()->clearMap();
         Mapper::getInstance()->addMap(Request::getInstance()->getUri(), array(
         	'module' => 'main',
         	'controller' => 'error',

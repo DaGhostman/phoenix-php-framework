@@ -12,6 +12,7 @@ class Factory {
     
     private $inTransaction = false;
     private $autoCommit = true;
+    private $persistent = true;
     
     
     public function __construct($connection = array())
@@ -63,6 +64,11 @@ class Factory {
             
             $this->link->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->link->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            
+            if ($this->persistent == true) {
+                $this->link->setAttribute(\PDO::ATTR_PERSISTENT, true);
+            }
+            
         } catch (\PDOException $e) {
             throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
         }
@@ -311,6 +317,13 @@ class Factory {
             return false;
         else
             return true;
+    }
+    
+    public function setPersistent($state)
+    {
+        $this->persistent = $state;
+        
+        return $this;
     }
     
     public function __sleep()

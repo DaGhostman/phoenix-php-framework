@@ -66,6 +66,7 @@ class File implements Cacher {
             if ((time() - $stat['mtime']) < $this->__ttl) {
                 return true;
             } else {
+                unlink($this->__registry.DIRECTORY_SEPARATOR.$key);
                 return false;
             }
         } else {
@@ -74,7 +75,7 @@ class File implements Cacher {
     }
 
     public function fetch($key) {
-        if (file_exists($this->__registry.DIRECTORY_SEPARATOR.$key)) {
+        if ($this->exists($key)) {
             return file_get_contents($this->__registry.DIRECTORY_SEPARATOR.$key);
         }
     }
@@ -82,8 +83,8 @@ class File implements Cacher {
     public function increment($key, $value = 1) {}
 
     public function push($key, $value, $ttl) {
-        if (file_exists($this->__registry.DIRECTORY_SEPARATOR.$key)) {
-            throw new Argument("The file you are trying to update alredy exists, please use update");
+        if ($this->exists($key)) {
+            throw new Argument("The file you are trying to set alredy exists, please use update");
         } else {
             $fp = fopen($this->__registry.DIRECTORY_SEPARATOR.$key, 'w+');
             flock($fp, LOCK_EX | LOCK_NB);
@@ -104,11 +105,15 @@ class File implements Cacher {
     }
 
     public function update($key, $value, $ttl) {
-        $fp = fopen($this->__registry.DIRECTORY_SEPARATOR.$key, 'w+');
-        flock($fp, LOCK_EX | LOCK_NB);
-        fwrite($fp, $value);
-        flock($fp, LOCK_UN);
-        fclose($fp);
+        if ($this->exists($key)) {
+            $fp = fopen($this->__registry.DIRECTORY_SEPARATOR.$key, 'w+');
+            flock($fp, LOCK_EX | LOCK_NB);
+            fwrite($fp, $value);
+            flock($fp, LOCK_UN);
+            fclose($fp);
+        } else {
+            throw new Argument("The file you are trying to update does not exist, please use push");
+        }
     }
 
 }

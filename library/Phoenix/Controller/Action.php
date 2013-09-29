@@ -16,7 +16,7 @@ class Action
         $x = Request::getInstance()->getRoute();
         $mainModuleAutoloader = new Autoloader();
         $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'modules' .
-            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR . 'models')->register();
+            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR)->register();
     }
     
         

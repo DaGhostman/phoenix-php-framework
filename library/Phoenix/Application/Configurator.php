@@ -13,6 +13,14 @@ class Configurator {
     private static $_instance = null;
     
     private function __construct(){}
+    /**
+     * Configuration object, that is used for internal configuration 
+     * inside the framework. If you need to use separate config file
+     * please use Configurator::getConfigurator();
+     * 
+     * @see Configurator::getConfigurator
+     * @return Configurator The configurator instance.
+     */
     public static function getInstance()
     {
         if (self::$_instance == null)
@@ -23,11 +31,27 @@ class Configurator {
         return self::$_instance;
     }
     
-    public function getConfigurator()
+    /**
+     * Returns a cloned configurator instance. Usefull
+     * when there is a need of parsing external config files
+     * 
+     * @return Configurator
+     */
+    public static function getConfigurator()
     {
         return clone Configurator::getInstance();
     }
     
+    /**
+     * Factory method that returns COnfiguration file object.
+     * All file objects are stored in array, against a hash of the filename
+     * if the same file is required multiple times it will return the 
+     * already used one. It will not presist the objects between requests
+     * 
+     * @param string $filename Relative to REAL_PATH destination of the file to be parsed with leading '/'
+     * @param const $type CONFIG_JSON or CONFIG_INI to specify the config file type
+     * @return Phoenix\File\Ini|Phoenix\File\Json object for accessing the configuration file
+     */
     public function parse($filename = '/application/config/application.ini', $type = self::CONFIG_INI)
     {
         

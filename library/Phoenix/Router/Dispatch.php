@@ -31,12 +31,13 @@ class Dispatch {
             $actionName = $route->getAction().'Action';
             $controller = $route->createController();
         
+            
             if ((method_exists($controller, $actionName)) && ($controller instanceof \Phoenix\Controller\Action)) {
                     if(method_exists($controller, 'preDispatch')) $controller->preDispatch();
                     $controller->$actionName();
                     if(method_exists($controller, 'postDispatch')) $controller->postDispatch();
             } else {
-                if ((true == empty($controller)) || (!$controller instanceof \Phoenix\Controller\Action) ):
+                if (($controller == false) || (!$controller instanceof \Phoenix\Controller\Action) ):
                     $response->sendStatusCode(503);
                     HttpErrorsManager::getInstance()->sendError(Response::HTTP_503, new \Exception('The controller for request: '.$request->getUri().' was not found'));
                 elseif (!method_exists($controller, $actionName)):

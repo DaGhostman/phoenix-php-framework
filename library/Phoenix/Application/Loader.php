@@ -16,6 +16,9 @@ class Loader
     
     
     /**
+     * Accepts a configuration object prepares required configuration
+     * for further execution. Example: sets APPLICATION_PATH, module path and etc.
+     * 
      * @param array|Object $options associative array or Forge\Configuration\Broker object
      * @param string $appPath The name of the configuration folder, no directory separators
      * @param array $options Array of configuration options
@@ -58,6 +61,13 @@ class Loader
         return $this;
     }
     
+    /**
+     * This triggeres the general Bootstrap file which should be located 
+     * inside your application path. Does not get affected by the setting
+     * in the configuration file, about per module bootstrap file.
+     * 
+     * @return \Phoenix\Application\Loader for chaining
+     */
     public function bootstrap()
     {
         
@@ -75,6 +85,12 @@ class Loader
         return $this; 
     }
     
+    /**
+     * Wrapper of the Phoenix\Controller\Front::run();
+     * 
+     * @see Phoenix\Controller\Front
+     * @throws \RuntimeException
+     */
     public function run()
     {
         try {

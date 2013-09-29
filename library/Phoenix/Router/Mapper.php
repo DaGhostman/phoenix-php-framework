@@ -48,6 +48,12 @@ class Mapper
         return $this;
     }
     
+    public function clearMap() {
+        $this->map = array();
+        
+        return $this;
+    }
+    
     public function map($uri)
     {
         foreach($this->map as $url => $route)

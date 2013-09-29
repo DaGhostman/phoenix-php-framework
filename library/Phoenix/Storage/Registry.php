@@ -39,7 +39,7 @@ class Registry
         self::$_registry[$namespace][$key] = $value;
     }
     
-    public static function &get($key, $namespace='defaultRegistry')
+    public static function get($key, $namespace='defaultRegistry')
     {
         if (array_key_exists($namespace, self::$_registry)):
             if (array_key_exists($key, self::$_registry[$namespace])):

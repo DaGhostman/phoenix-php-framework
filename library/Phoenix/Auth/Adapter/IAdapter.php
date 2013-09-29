@@ -34,7 +34,7 @@ abstract class IAdapter {
     public abstract function __call($name, $params);
     
     abstract public function authenticate();
-    abstract public function getIdentity(array $fields = array());
+    abstract public function getIdentity();
     abstract public function hasIdentity();
     
     abstract public function setCredential($value, $field);
