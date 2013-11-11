@@ -7,24 +7,22 @@ use Phoenix\View\Viewer;
 
 class Action
 {
-    final public function __construct()
+    final public function __construct($request, $config)
     {
-        $uri = Request::getInstance()->getParams();
-        $this->view = Viewer::getInstance();  
-        $this->view->sendOutput(true);
+        $this->view = new Viewer($request->getRoute(), $config);
         
         $x = Request::getInstance()->getRoute();
         $mainModuleAutoloader = new Autoloader();
-        $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'modules' .
-            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR)->register();
+        $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . 
+            DIRECTORY_SEPARATOR . $config['core-application.module.path'] .
+            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR)
+        ->register();
     }
     
         
     final public function __destruct()
     {
-        $uri = Request::getInstance()->getParams();
-        $this->view = Viewer::getInstance(); 
-        $this->view->render();
+        unset($this->view);
     }
 
 }

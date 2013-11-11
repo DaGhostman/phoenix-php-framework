@@ -6,29 +6,37 @@ use Phoenix\Storage\Configurator;
 
 class Session
 {
+    protected static $sessInit = null;
     
-    
-    public function __construct($options = array()){
+    private function __construct($options = array()){
         
+    	
         $cfg = Configurator::getInstance($options);
         $cfg->prepare();
-    }
-    
-    public static function start($options = array())
-    {
-        new Session($options);
         
-        if (!session_id()) { 
-            session_start(); 
+        session_start();
+        
+    if (!array_key_exists('DEFAULT', $_SESSION)) { 
             $_SESSION['DEFAULT'] = array(); 
         }
     }
     
+    public static function start($options = array())
+    {
+    	
+    	if (self::$sessInit == null) {
+        	new Session($options);
+    	}
+        
+        
+    }
+    
     public static function set($key, $value)
     {
-        if(session_id())
+        if(array_key_exists('DEFAULT', $_SESSION))
         {
-            $_SESSION['DEFAULT'][$key] = serialize($value);
+        	$_SESSION['DEFAULT'][$key] = array();
+            $_SESSION['DEFAULT'][$key] = $value;
             return true;
         } else {
             return false;
@@ -39,7 +47,7 @@ class Session
     {
         if(session_id() && $_SESSION['DEFAULT'][$key])
         {
-            return unserialize($_SESSION['DEFAULT'][$key]);
+            return $_SESSION['DEFAULT'][$key];
         } else {
             return false;
         }

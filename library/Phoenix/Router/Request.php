@@ -25,6 +25,9 @@ class Request {
     
         return self::$instance;
     }
+    /**
+     * @todo Should remove the $_SERVER variables to enable cli apps dev (?)
+     */
     
     /**
      * Creates the request object

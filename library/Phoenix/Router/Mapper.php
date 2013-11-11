@@ -54,12 +54,12 @@ class Mapper
         return $this;
     }
     
-    public function map($uri)
+    public function map($uri, $conf)
     {
         foreach($this->map as $url => $route)
         {
             if (fnmatch($url, $uri)) {
-               return new Route($url, $route);
+               return new Route($url, $route, $conf);
             }
         }
         

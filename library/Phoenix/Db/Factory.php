@@ -179,30 +179,30 @@ class Factory {
     
     public function update($table, array $bind, array $conditions = array())
     {
-        
+    	
         if ($this->isConnected() == false) {
             $this->connect();
         }
         
         $set = array();
         
-        foreach($bind as $col => $val):
+        foreach($bind as $col => $val) {
             unset($bind[$col]);
             $bind[':'.$col] = $val;
             $set[] = $col.'= :'.$col;
-        endforeach;
+        }
         
-        if (is_array($conditions) && !empty($conditions)):
+        if (is_array($conditions) && !empty($conditions)) {
             foreach($conditions as $k => $v) {
                 $condition[] = $k.'= :'. $k;
                 $bind[':'.$k] = $v;
             }
             
             $where = implode(' AND ', $condition);
-        endif;
+        }
         
         $query = 'UPDATE '.$table.' SET '.implode(', ', $set) .
-            (($where) ? ' WHERE '.$where : '').';';
+            (isset($where) ? ' WHERE '.$where : '').';';
         
         return (int) $this->prepare($query)
                     ->execute($bind)
@@ -227,7 +227,7 @@ class Factory {
                 (($where) ? ' WHERE ' . implode(' ' . $operator . ' ', $where) : '').
                 (($limit) ? 'LIMIT '.$limit : '') .
                 ';';
-        
+                
         $this->prepare($query)
                 ->execute($bind);
         

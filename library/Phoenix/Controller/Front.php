@@ -4,7 +4,7 @@ namespace Phoenix\Controller;
 use Phoenix\Router\Response;
 use Phoenix\Router\Request;
 use Phoenix\Router\Dispatch;
-use Phoenix\Core\HttpErrorsManager;
+use Phoenix\Core\ErrorManager;
 
 
 class Front
@@ -28,12 +28,14 @@ class Front
     }
     
     private function __construct(){}
-    
+    public function __clone(){
+        throw new \BadMethodCallException('The front controller should not be cloned.');
+    }
     /**
      * Triggers the Dispatcher and inits the instances
      * of Request and Response.
      */
-    public function run() {
+    public function run($configuration) {
         $request = Request::getInstance( 
                 ($_GET ? $_GET : ($_POST ? $_POST : array()))
                 );
@@ -42,11 +44,11 @@ class Front
         
         try {
             $dispatch->dispatch(
-                $request, $response
+                $request, $response, $configuration
             );
         } catch (\OutOfRangeException $e)
         {
-            HttpErrorsManager::getInstance()->sendError(Response::HTTP_404, $e);
+            ErrorManager::getInstance()->sendError(Response::HTTP_404, $e);
         }
     }
 

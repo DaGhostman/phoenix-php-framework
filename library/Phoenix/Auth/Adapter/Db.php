@@ -30,7 +30,7 @@
 namespace Phoenix\Auth\Adapter;
 use Phoenix\Auth\Adapter\IAdapter;
 use Phoenix\Db\Crud\AccessLayer;
-use Phoenix\Core\HttpErrorsManager;
+use Phoenix\Core\ErrorManager;
 use Phoenix\Router\Response;
 use Phoenix\Storage\Session;
 
@@ -45,7 +45,7 @@ use Phoenix\Storage\Session;
  * @see Factory::__construct()
  * @uses Phoenix\Auth2\Adapter\IAdapter
  * @uses Phoenix\Db\Orm\AccessLayer
- * @uses Phoenix\Core\HttpErrorsManager
+ * @uses Phoenix\Core\ErrorManager
  * @uses Phoenix\Router\Response
  * @uses Phoenix\Storage\Registry
  * @uses Phoenix\Storage\Session
@@ -71,7 +71,7 @@ class Db extends IAdapter {
      */
     public function __construct($layer) {
         if (!$layer instanceof AccessLayer):
-            HttpErrorsManager::getInstance()->sendError(
+            ErrorManager::getInstance()->sendError(
                 Response::HTTP_500,
                     new \InvalidArgumentException(
                             'DB authentication requires instance of AccessLayer'
@@ -157,7 +157,8 @@ class Db extends IAdapter {
             array($this->__tokenField => session_id()),
             $this->__fields
         );
-        Session::set('userIdentity', $this->__identity);
+        $session = Session::set('userIdentity', $this->__identity);
+        
         
         return $this;
     }
@@ -168,9 +169,9 @@ class Db extends IAdapter {
             if (($id = Session::get('userIdentity')) != false):
                 $this->__identity = $id;
             else:
-                $id = $this->__access->findAll(
-                        array($this->__tokenField => session_id())
-                        );
+            	$this->__access->setIdColumn($this->__tokenField);
+                $id = $this->__access->findById(session_id());
+                
                 $this->__identity = isset($id[0]) ? $id[0] : $id;
             endif;
         endif;

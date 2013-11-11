@@ -26,8 +26,8 @@
  */
 
 namespace Phoenix\View;
+use Phoenix\View\Translate;
 use Phoenix\Application\Configurator;
-use Phoenix\Application\Cache\APC;
 
 class Translate {
     
@@ -37,20 +37,36 @@ class Translate {
 
     protected static $_instance = null;
     
-    public static function getInstance()
-    {
-        if (empty(self::$_instance))
-            self::$_instance = new Translate ();
-        
-        
-        return self::$_instance;
+    /**
+     * Method to override the language supplied by the Accept-Language.
+     * The usage of it could be usefull when internationalization and
+     * targeted SEO should be achieved.
+     * 
+     * @access public
+     * @param string $lang
+     * @return self
+     */
+    public function setLanguage($lang) {
+    	$this->lang = $lang;
+    	
+    	return $this;
     }
     
-    protected function __construct() {
+    public function __construct($config, $language = null) {
         
-        $this->lang = $this->getPrefferedLanguage();
+        $this->lang = $language ? $language : $this->getPrefferedLanguage($config);
     }
     
+    /**
+     * 
+     * The true translation method, which translates the code string
+     * in the language detected or the one defined by the user.
+     * 
+     * @access public
+     * @param string $string the string which should be translated.
+     * @return string Returns the translation of the code string or
+     * the code string if the translation is not found.
+     */
     public function translate($string)
     {
         if (empty($this->xml)) {
@@ -62,14 +78,14 @@ class Translate {
                         '//tu[@id="' . $string . '"]/tuv[@lang="' . $this->lang . '"]'
                         );
             
-                if (($seg == false) || (empty($seg))) {
+                if (($seg == false) || (empty($seg) || (isset($seg[0])))) {
                 	$seg = $this->xml->xpath(
                         '//entry[@id="' . $string . '"][@lang="' . $this->lang . '"]'
                         );
                 	
                 	$result = $seg[0];
                 } else {
-                        $result = $seg[0]->seg[0];
+                    $result = $seg[0]->seg[0];
                 }
             } else {
                 return $string;
@@ -79,6 +95,14 @@ class Translate {
         return $result ? $result : $string;
     }
     
+    /**
+     * 
+     * Parses the XML document which contains the translation definitions.
+     * The file name should be the language code determinated by the Accept-Language
+     * or by the manual defined language.
+     * 
+     * @access protected
+     */
     protected function parse()
     {
         $filename = REAL_PATH . $this->dir . 
@@ -91,13 +115,17 @@ class Translate {
         return; 
     }
 
-    public function getPrefferedLanguage()
+    
+    /**
+     * 
+     * The method which is used to parse the 'Accept-Language' header
+     * and determinate the user language based on the 
+     */
+    public function getPrefferedLanguage($cfg)
     {
-        $cfg = Configurator::getInstance()->parse();
         
         $websiteLanguages = array();
-        $raw = $cfg->raw();
-        foreach($raw['language']['supported'] as $value)
+        foreach($cfg['language-supported'] as $value)
             $websiteLanguages[] = strtolower($value);
         
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']))
@@ -143,7 +171,7 @@ class Translate {
                 }
             }
         } else {
-            return $cfg->language->default;
+            return $cfg['language-default'];
         }
         
         

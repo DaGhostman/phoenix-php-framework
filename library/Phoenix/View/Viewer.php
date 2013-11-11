@@ -27,111 +27,85 @@
 
 namespace Phoenix\View;
 
-use Phoenix\Core\HttpErrorsManager;
+use Phoenix\Application\ErrorManager;
 use Phoenix\Router\Request;
 use Phoenix\View\Translate;
-class Viewer implements \ArrayAccess{
+class Viewer implements \ArrayAccess, \IteratorAggregate {
     
     private static $_instance = null;
     
     private $viewContents;
-    private $view = null;
     private $tpl = null;
-    protected $compiler = null;
     
-    private static $uri;
-    public $_helper = null;
-    protected $_translate = null;
+    protected $_translate = null, $_config = null;
     
     protected $output = true;
-        
-    public $compile = FALSE;
     
-    protected function __construct()
-    {
-        $this->uri = Request::getInstance()->getRoute();
-
-        return $this;
+    public function setTranslator($translator) {
+        $this->_translate = $translator;
     }
     
-    public function setTemplate($templateName)
+    public function __construct($route, $conf)
     {
-        $this->view = $templateName;
+        $this->_config = &$conf;
         
-        return $this;
-    }
-    
-    private function prepare()
-    {
         if ($this->output != false) {
-            $module = $this->uri['module'];
-            $controller = $this->uri['controller'];
-            $action = ($this->view ? $this->view : $this->uri['action']);
-        
-            $conf = \Phoenix\Storage\Registry::get('config', 'SystemCFG');
+            $module = $route['module'];
+            $controller = $route['controller'];
+            $action = $route['action'];
         
             try {
-                if (is_readable(APPLICATION_PATH . '/modules/'.$module.'/views/'.$controller.'/'.$action.'.phtml')):
+                $template = APPLICATION_PATH . 
+                    $conf['core-application.module.path'] . 
+                    DIRECTORY_SEPARATOR . $module . 
+                    $conf['core-application.view.path'] .
+                    DIRECTORY_SEPARATOR . $controller .
+                    DIRECTORY_SEPARATOR . $action.'.phtml';
+                    
+                    
+                if (is_readable($template)):
 
                     ob_start();
-                    include_once(APPLICATION_PATH . $conf['application.module.path'] .
-                        DIRECTORY_SEPARATOR . $module . $conf['application.view.path'] .
-                        DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR
-                        . $action . '.phtml'
-                        );
-                    $this->viewContents = $this->compress(ob_get_contents());
+                    include_once($template);
+                    $this->viewContents = ob_get_contents();
                     ob_end_clean();
                 else:
                     throw new \OutOfRangeException(
                         'Unable to find the template for : ' . 
-                        $_SERVER['HTTP_HOST'] . '/' . $module . '/' . 
+                        '/' . $module . '/' . 
                         $controller . '/' . $action
                         );
                 endif;
             
             } catch (\OutOfRangeException $e) {
-                HttpErrorsManager::getInstance()->sendError(404, $e);
+                ErrorManager::getInstance()->sendError(404, $e);
             }
         }
+        
     }
         
-        public function compress($content) {
-            $search = array(
-                '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
-                '/[^\S ]+\</s',  // strip whitespaces before tags, except space
-                '/(\s)+/s'       // shorten multiple whitespace sequences
-            );
+    public function compress($content) {
+        $search = array(
+        	'/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+        	'/[^\S ]+\</s',  // strip whitespaces before tags, except space
+        	'/(\s)+/s'       // shorten multiple whitespace sequences
+        );
             
-            $replace = array(
-                '>',
-                '<',
-                '\\1'
-            );
+        $replace = array(
+            '>',
+            '<',
+            '\\1'
+        );
             
-            $trimed = preg_replace($search, $replace, $content);
-            $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed, -1);
-            return $minified;
+        $trimed = preg_replace($search, $replace, $content);
+        $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed);
+        
+        return $minified;
     }
-	
-	
-	public static function getInstance($uri = '')
-	{	
-		if (self::$_instance == false)
-			self::$_instance = new Viewer($uri);
-		elseif (!self::$_instance instanceof Viewer)
-			self::$_instance = new Viewer($uri);
-		
-		return self::$_instance;
-	}
 	
 	public function __set($key, $value)
 	{
 		$this->tpl[$key] = $value;
-	}
-	
-	public function setCache($state)
-	{
-		$this->compile = $state;
 	}
 	
 	public function __get($key)
@@ -142,22 +116,10 @@ class Viewer implements \ArrayAccess{
                 return null;
 	}
         
-    public function sendOutput($state = false)
+    public function sendOutput($state)
     {
         $this->output = $state;
     }
-	
-	public function render()
-	{
-            $this->prepare();
-            if ($this->output == false) $this->viewContents = '';
-            print $this->viewContents;
-	}
-        
-        public static function resetInstance()
-        {
-            self::$_instance = null;
-        }
 
     public function offsetExists($offset) {
         return array_key_exists($offset, $this->tpl);
@@ -174,12 +136,16 @@ class Viewer implements \ArrayAccess{
     public function offsetUnset($offset) {
         unset($this->tpl[$offset]);
     }
+    
+    public function getIterator() {
+        return new \ArrayIterator($this->tpl);
+    }
     #Language warpers
     
     public function translate($string) {
         
         if (empty($this->_translate)) {
-            $this->_translate = Translate::getInstance();
+            $this->_translate = new Translate($this->_config);
         }
         
         return $this->_translate->translate($string);
@@ -189,6 +155,10 @@ class Viewer implements \ArrayAccess{
         return $this->_translate->getCurrentLanguage();
     }
     
-    
+    public function __destruct() {
+        if ($this->output == false) return;
+        
+        print $this->compress($this->viewContents);
+    }
 	
 }

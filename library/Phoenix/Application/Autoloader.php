@@ -97,9 +97,7 @@ class Autoloader {
      * @return \Forge\Application\Autoloader
      */
     public function register() {
-        spl_autoload_register(array($this, 'autoload'), true, false);
-
-        return $this;
+        return spl_autoload_register(array($this, 'autoload'), true, false);
     }
 
     /**

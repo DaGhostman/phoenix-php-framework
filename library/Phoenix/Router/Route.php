@@ -3,61 +3,65 @@
 namespace Phoenix\Router;
 
 use Phoenix\Router\Request;
-use Phoenix\Storage\Registry;
 
 
 class Route
 {
     
-    protected $path;
-    protected $controllerClass;
+    protected $_path;
+    protected $_controllerClass;
     
-    protected $defaultAction,
-        $defaultController,
-        $defaultModule;
+    protected $_defaultAction;
+    protected $_defaultController;
+    protected $_defaultModule;
     
     
     public function __construct($path, $route = array(
             'module' => ':module',
             'controller' => ':controller',
             'action' => ':action'
-            ))
+            ), $conf)
     {
         
-        $conf = Registry::get('config', 'SystemCFG');
+        $this->_defaultAction = 'index';
+        $this->_defaultController = 'index';
+        $this->_defaultModule  = $conf['core-application.default.module'];
+        $this->controllerPath = $conf['core-application.controller.path'];
         
-        $this->defaultAction = 'index';
-        $this->defaultController = 'index';
-        $this->defaultModule  = $conf['application.default.module'];
-        $this->controllerPath = $conf['application.controller.path'];
+        $this->modulePath = $conf['core-application.module.path'];
         
-        $this->modulePath = $conf['application.module.path'];
-        
-
-        @$this->module = $route['module'] ? 
+        $this->module = $route['module'] ? 
         $route['module'] : ($this->module ? $this->module : ':module');
-        @$this->controller = ($route['controller'] ? 
+        $this->controller = ($route['controller'] ? 
         $route['controller'] : ':controller');
-        @$this->action = $route['action'] ? 
-        $route['action'] : ':action';
+        $this->action = ($route['action'] ? 
+        $route['action'] : ':action');
         
-        $this->path = $path;
+        $this->_path = $path;
         $this->route = array(
                 'module' => $this->module,
                 'controller' => $this->controller,
                 'action' => $this->action
                 );
-        $this->controllerClass = ucfirst($this->controller).'Controller';
+        
+        $this->_controllerClass = ucfirst($this->controller).'Controller';
         
     }
     
-    public function load()
+    public function load($request)
     {
         
-        $entries=explode('/', preg_replace('#'.rtrim($this->path,'*').'#i','',Request::getInstance()->getUri(),1));
+        $entries=array_values(array_filter(explode('/', 
+                        preg_replace('#'.rtrim($this->_path, '*').'#i', 
+                            '', 
+                            $request->getUri(), 
+                            1))));
         
         if ($this->module == ':module') {
-            $module = isset($entries[0]) ? $entries[0] : $this->defaultModule;
+            $module = (isset($entries[0]) && !empty($entries[0]) ? 
+                $entries[0] : $this->_defaultModule
+            );
+                
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -65,7 +69,10 @@ class Route
         }
         
         if ($this->controller == ':controller') {
-            $controller = isset($entries[0]) ? $entries[0] : $this->defaultController;
+            $controller = (isset($entries[0]) && !empty($entries[0]) ? 
+                $entries[0] : $this->_defaultController
+            );
+            
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -73,7 +80,9 @@ class Route
         }
         
         if ($this->action == ':action') {
-            $action = isset($entries[0]) ? $entries[0] : $this->defaultAction;
+            $action = (isset($entries[0]) && !empty($entries[0]) ? 
+                        $entries[0] : $this->_defaultAction
+                        );
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -83,7 +92,7 @@ class Route
         
         for ($i=0; $i<count($entries); $i++):
         $slice = array_values(array_slice(array_values($entries), $i*2, 2));
-        if (!empty($slice))
+        if (!empty($slice) && (!empty($slice[0]) && !empty($slice[1])))
             Request::getInstance()->setParams($slice[0], $slice[1]);
         endfor;
         
@@ -94,19 +103,23 @@ class Route
         if (is_readable(APPLICATION_PATH . $this->modulePath .
             DIRECTORY_SEPARATOR . $this->module .
             $this->controllerPath . DIRECTORY_SEPARATOR .
-            ucfirst($this->controller) . 'Controller.php'))
-        {
-            $this->controllerClass = ucfirst($this->controller).'Controller';
+            ucfirst($this->controller) . 'Controller.php')) {
+            $this->_controllerClass = ucfirst($this->controller).'Controller';
         
-            
-            
-            if (is_readable(APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php'))
-            {
-                require_once APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php';
+            if (is_readable(APPLICATION_PATH . 
+                            $this->modulePath . 
+                            DIRECTORY_SEPARATOR . 
+                            $this->module.'/Bootstrap.php')) {
+                                
+                require_once APPLICATION_PATH . 
+                                $this->modulePath . 
+                                DIRECTORY_SEPARATOR . 
+                                $this->module.'/Bootstrap.php';
+                                
                 $this->moduleBootstrap = new \ModuleBootstrap();
         
-                foreach(get_class_methods($this->moduleBootstrap) as $method)
-                {
+                foreach (get_class_methods($this
+                            ->moduleBootstrap) as $method) {
                     $this->moduleBootstrap->$method();
                 }
             }
@@ -119,9 +132,10 @@ class Route
             Request::getInstance()->setRoute($this->route);
         
         
-        $controllerClass = REAL_PATH .'/application/modules/';
-        $controllerClass .= $this->module. '/controllers/';
-        $controllerClass .= ucfirst($this->controller).'Controller.php';
+        $controllerClass = APPLICATION_PATH . $this->modulePath;
+        $controllerClass .= DIRECTORY_SEPARATOR . $this->module;
+        $controllerClass .= $this->controllerPath . DIRECTORY_SEPARATOR;
+        $controllerClass .= ucfirst($this->controller) . 'Controller.php';
         
         
         if (is_readable($controllerClass)) require_once $controllerClass;
@@ -130,13 +144,13 @@ class Route
 
     public function getPath()
     {
-        return $this->path;
+        return $this->_path;
     }
 
-    public function createController()
+    public function createController($route, $config)
     {
-            if (class_exists($this->controllerClass))
-        return new $this->controllerClass;
+            if (class_exists($this->_controllerClass))
+        return new $this->_controllerClass($route, $config);
             else 
                 return false;
     }
