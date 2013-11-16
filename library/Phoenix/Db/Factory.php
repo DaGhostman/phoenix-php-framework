@@ -12,32 +12,32 @@ class Factory {
     
     private $inTransaction = false;
     private $autoCommit = true;
-    private $persistent = true;
+    private $persistent = false;
     
     
     public function __construct($connection = array())
     {
-        $cfg = Configurator::getInstance()->parse('/application/config/application.ini', Configurator::CONFIG_INI);
         
-        $this->engine = isset($connection['engine']) ? $connection['engine'] : ($cfg->db->engine ? $cfg->db->engine : 'mysql');
+        $this->engine = isset($connection['database-engine']) ? $connection['database-engine'] : 'mysql';
         switch($this->engine):
             case 'mysql':
             case 'pgsql':
-                $this->host = isset($connection['host']) ? $connection['host'] : ($cfg->db->hostname ? $cfg->db->hostname : 'localhost');
-                $this->user = isset($connection['user']) ? $connection['user'] : ($cfg->db->username ? $cfg->db->username : 'root');
-                $this->pass = isset($connection['pass']) ? $connection['pass'] : ($cfg->db->password ? $cfg->db->password : 'root');
-                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
-                $this->port = isset($connection['port']) ? $connection['port'] : ($cfg->db->port ? $cfg->db->port : '3306');
+                $this->host = isset($connection['database-hostname']) ? $connection['database-hostname'] : 'localhost';
+                $this->user = isset($connection['database-username']) ? $connection['database-username'] : 'root';
+                $this->pass = isset($connection['database-password']) ? $connection['database-password'] : 'root';
+                $this->name = isset($connection['database-dbname']) ? $connection['database-dbname'] : 'application';
+                $this->port = isset($connection['database-port']) ? $connection['database-port'] : '3306';
                 
                 $this->dsn = sprintf("%s:host=%s;dbname=%s;port=%s;", $this->engine, $this->host, $this->name, $this->port);
                 break;
             case 'sqlite':
+            case 'sqlite3':
             case 'uri':
-                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
+                $this->name = isset($connection['database-dbname']) ? $connection['database-dbname'] : 'application';
                 $this->dsn = sprintf("%s:%s", $this->engine, $this->name);
                 break;
             case 'oci':
-                $this->name = isset($connection['dbname']) ? $connection['dbname'] : ($cfg->db->dbname ? $cfg->db->dbname : 'application');
+                $this->name = isset($connection['databse-dbname']) ? $connection['database-dbname'] : 'application';
                 $this->dsn = sprintf("%s:dbname=%s", $this->engine, $this->name);
         endswitch;
         
@@ -56,12 +56,15 @@ class Factory {
         
         try {
         
-        
+        if (($this->engine == 'mysql') || ($this->engine == 'pgsql')) {
             $this->link = new \PDO($this->dsn, 
                 $this->user, 
                 $this->pass
             );
             
+        } else {
+            $this->link = new \PDO($this->dsn);
+        }
             $this->link->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->link->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             
@@ -86,7 +89,7 @@ class Factory {
             
             return $this;
         } catch (\PDOException $e) {
-            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
+            throw new \RuntimeException($e->getMessage(), 500);
             return false;
         }
     }
@@ -107,7 +110,7 @@ class Factory {
             $this->statement->execute($params);
             
         } catch (\PDOException $e) {
-            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e->getPrevious());
+            throw new \RuntimeException($e->getMessage(), 500);
         }
         
         return $this;

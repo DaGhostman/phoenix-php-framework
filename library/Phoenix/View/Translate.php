@@ -47,6 +47,7 @@ class Translate {
      * @return self
      */
     public function setLanguage($lang) {
+        $this->xml = null;
     	$this->lang = $lang;
     	
     	return $this;
@@ -69,50 +70,30 @@ class Translate {
      */
     public function translate($string)
     {
-        if (empty($this->xml)) {
-            $this->parse();
-        }
+        $result = $string;
         
-            if($this->xml != null) {
-                $seg = $this->xml->xpath(
-                        '//tu[@id="' . $string . '"]/tuv[@lang="' . $this->lang . '"]'
-                        );
-            
-                if (($seg == false) || (empty($seg) || (isset($seg[0])))) {
-                	$seg = $this->xml->xpath(
-                        '//entry[@id="' . $string . '"][@lang="' . $this->lang . '"]'
-                        );
-                	
-                	$result = $seg[0];
-                } else {
-                    $result = $seg[0]->seg[0];
-                }
-            } else {
-                return $string;
-            }
-	
-            
-        return $result ? $result : $string;
-    }
-    
-    /**
-     * 
-     * Parses the XML document which contains the translation definitions.
-     * The file name should be the language code determinated by the Accept-Language
-     * or by the manual defined language.
-     * 
-     * @access protected
-     */
-    protected function parse()
-    {
-        $filename = REAL_PATH . $this->dir . 
+        if (empty($this->xml)) {
+            $filename = REAL_PATH . $this->dir . 
                                 $this->lang . '.xml';
         
-        if (is_file($filename) && is_readable($filename))
+            if (!is_file($filename) || !is_readable($filename)) {
+                throw new \Exception("Unable to load language file " . 
+                                $this->lang);
+            }
+        
             $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
+        }
         
+        $xpath = sprintf('//entry[@id="%s"][@lang="%s"]', 
+                        $string, $this->lang);
         
-        return; 
+        if($this->xml != null) {
+            $seg = $this->xml->xpath($xpath);
+            if (!empty($seg)) { $result = $seg[0]; }
+        }
+	
+            
+        return $result;
     }
 
     
@@ -128,8 +109,7 @@ class Translate {
         foreach($cfg['language-supported'] as $value)
             $websiteLanguages[] = strtolower($value);
         
-        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']))
-        {
+        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $langParse = null;
             
             preg_match_all(

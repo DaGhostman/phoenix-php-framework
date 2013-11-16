@@ -11,20 +11,21 @@ use Phoenix\View\Viewer;
 
 class Dispatch {
     
-    public function dispatch(Request $request, Response $response, $configuration)
+    private $_config = null;
+    
+    public function dispatch(Request $request, Response $response, $configuration = null)
     {
+        if ($configuration != null) {
+            $this->_config = $configuration;
+        }
         
-        if (($route = Mapper::getInstance()->map($request->getUri(), $configuration)) != false) {
+        if (($route = Mapper::getInstance()->map($request->getUri(), $this->_config)) != false) {
             $route->load($request);
         } else {
-            ErrorManager::getInstance()
-            ->sendError(
-                $response::HTTP_404,
-                new \Exception(
-                    'No Route Found for requested: ' .
-                    $request->getUri()
-                )
-            );
+            $error = sprintf('Unable to map request to \'%s\'', 
+                $request->getUri());
+                
+            throw new \RuntimeException($error, 404);
         }
         
         
@@ -32,22 +33,19 @@ class Dispatch {
             $actionName = $route->getAction().'Action';
             $controller = $route->createController($request, $configuration);
             
-            
-            
-            
             if ((method_exists($controller, $actionName)) && ($controller instanceof \Phoenix\Controller\Action)) {
                     if(method_exists($controller, 'preDispatch')) $controller->preDispatch();
                     $controller->$actionName();
                     if(method_exists($controller, 'postDispatch')) $controller->postDispatch();
             } else {
-                if (($controller == false) || (!$controller instanceof \Phoenix\Controller\Action) ):
-                    $response->sendStatusCode(503);
-                    ErrorManager::getInstance()->sendError(Response::HTTP_503, new \Exception('The controller for request: '.$request->getUri().' was not found'));
-                elseif (!method_exists($controller, $actionName)):
-                    Viewer::resetInstance();
-                    $response->sendStatusCode(404);
-                    ErrorManager::getInstance()->sendError(Response::HTTP_404, new \Exception('The template for request: '.$request->getUri().' was not found'));
-                endif;
+                if (($controller == false) || 
+                    (!$controller instanceof \Phoenix\Controller\Action)) {
+                       throw new \Exception('The controller for request: ' . 
+                            $request->getUri().' was not found', 503);
+               } elseif (!method_exists($controller, $actionName)) {
+                   throw new \Exception('The template for request: ' . 
+                            $request->getUri().' was not found', 404);
+               }
             }
         }
     }

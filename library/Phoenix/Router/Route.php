@@ -15,11 +15,18 @@ class Route
     protected $_defaultController;
     protected $_defaultModule;
     
-    
+    /**
+     * 
+     * Sets the route information which will be created by Mapper
+     * @param string $path The uri path of the request
+     * @param array $route route definitions
+     * @param Configurator $conf the configuration object
+     */
     public function __construct($path, $route = array(
             'module' => ':module',
             'controller' => ':controller',
-            'action' => ':action'
+            'action' => ':action',
+            'lang' => 'en'
             ), $conf)
     {
         
@@ -37,17 +44,26 @@ class Route
         $this->action = ($route['action'] ? 
         $route['action'] : ':action');
         
+        $this->language = ($route['lang'] ? $route['lang'] : null);
+        
         $this->_path = $path;
         $this->route = array(
                 'module' => $this->module,
                 'controller' => $this->controller,
-                'action' => $this->action
+                'action' => $this->action,
+                'language' => $this->language
                 );
         
         $this->_controllerClass = ucfirst($this->controller).'Controller';
         
     }
     
+    /**
+     * 
+     * Loads the per-module bootstrap and looks up the controller
+     * @param Request $request the current request object
+     * @return void
+     */
     public function load($request)
     {
         
@@ -127,7 +143,8 @@ class Route
             $this->route = array(
                 'module' => $this->module,
                 'controller' => $this->controller,
-                'action' => $this->action
+                'action' => $this->action,
+                'language' => $this->language
             );
             Request::getInstance()->setRoute($this->route);
         
@@ -142,31 +159,57 @@ class Route
         }
     }
 
+    /**
+     * 
+     * Returns the current route URI path
+     * @return void
+     */
     public function getPath()
     {
         return $this->_path;
     }
 
-    public function createController($route, $config)
+    /**
+     * 
+     * Creates the controller and passes the configuration and route to it
+     * @param Request $request the current request object
+     * @param Configurator $config the configuration object
+     */
+    public function createController($request, $config)
     {
-            if (class_exists($this->_controllerClass))
-        return new $this->_controllerClass($route, $config);
-            else 
-                return false;
+        if (class_exists($this->_controllerClass))
+            return new $this->_controllerClass($request, $config);
+        else
+           return false;
     }
     
+    /**
+     * 
+     * Returns the current request module
+     */
     public function getModule()
     {
         return $this->module;
     }
-    
+    /**
+     * 
+     * Returns the current request controller
+     */
     public function getController()
     {
         return $this->controller;
     }
     
+    /**
+     * 
+     * Returns the current request action
+     */
     public function getAction()
     {
         return $this->action;
+    }
+    
+    public function getLanguage() {
+        return $this->language;
     }
 }

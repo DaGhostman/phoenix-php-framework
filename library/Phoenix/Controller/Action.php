@@ -5,12 +5,18 @@ use Phoenix\Router\Request;
 use Phoenix\View\Viewer;
 
 
-class Action
+abstract class Action
 {
+    protected $__request = array(),
+        $__configuration = array();
+        
+    protected $view = null;
+    
     final public function __construct($request, $config)
     {
         $this->view = new Viewer($request->getRoute(), $config);
-        
+        $this->__configuration = $config;
+        $this->__request = $request;
         $x = Request::getInstance()->getRoute();
         $mainModuleAutoloader = new Autoloader();
         $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . 

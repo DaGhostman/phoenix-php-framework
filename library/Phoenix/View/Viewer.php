@@ -30,15 +30,16 @@ namespace Phoenix\View;
 use Phoenix\Application\ErrorManager;
 use Phoenix\Router\Request;
 use Phoenix\View\Translate;
-class Viewer implements \ArrayAccess, \IteratorAggregate {
+class Viewer  {
     
     private static $_instance = null;
     
-    private $viewContents;
-    private $tpl = null;
-    
+    protected $viewContents;
+    protected $tpl = array();
+    protected $language = null;
     protected $_translate = null, $_config = null;
-    
+    protected $_template = null;
+    protected $_compress = true;
     protected $output = true;
     
     public function setTranslator($translator) {
@@ -53,38 +54,39 @@ class Viewer implements \ArrayAccess, \IteratorAggregate {
             $module = $route['module'];
             $controller = $route['controller'];
             $action = $route['action'];
-        
-            try {
-                $template = APPLICATION_PATH . 
-                    $conf['core-application.module.path'] . 
-                    DIRECTORY_SEPARATOR . $module . 
-                    $conf['core-application.view.path'] .
-                    DIRECTORY_SEPARATOR . $controller .
-                    DIRECTORY_SEPARATOR . $action.'.phtml';
-                    
-                    
-                if (is_readable($template)):
-
-                    ob_start();
-                    include_once($template);
-                    $this->viewContents = ob_get_contents();
-                    ob_end_clean();
-                else:
-                    throw new \OutOfRangeException(
-                        'Unable to find the template for : ' . 
-                        '/' . $module . '/' . 
-                        $controller . '/' . $action
-                        );
-                endif;
             
-            } catch (\OutOfRangeException $e) {
-                ErrorManager::getInstance()->sendError(404, $e);
-            }
+            $this->language = $route['language'];
+            
+            $this->_translate = new Translate($this->_config, $this->language);
+            
+            $this->_template = APPLICATION_PATH . 
+                $conf['core-application.module.path'] . 
+                DIRECTORY_SEPARATOR . $module . 
+                $conf['core-application.view.path'] .
+                DIRECTORY_SEPARATOR . $controller .
+                DIRECTORY_SEPARATOR . $action.'.phtml';
+                
         }
         
     }
+
+    private function getContents() {
+        if (is_readable($this->_template)):
+            ob_start();
+            include_once($this->_template);
+            $this->viewContents = ob_get_contents();
+            ob_end_clean();
+        else:
+            throw new \OutOfRangeException('
+               Unable to find the template: ' . 
+               $this->_template, 503
+            );
+        endif;
+    }
+    
+    protected function compressed() {
+        $this->getContents();
         
-    public function compress($content) {
         $search = array(
         	'/\>[^\S ]+/s',  // strip whitespaces after tags, except space
         	'/[^\S ]+\</s',  // strip whitespaces before tags, except space
@@ -97,10 +99,16 @@ class Viewer implements \ArrayAccess, \IteratorAggregate {
             '\\1'
         );
             
-        $trimed = preg_replace($search, $replace, $content);
+        $trimed = preg_replace($search, $replace, $this->viewContents);
         $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed);
         
         return $minified;
+    }
+    
+    protected function generic() {
+        $this->getContents();
+        
+        return $this->viewContents;
     }
 	
 	public function __set($key, $value)
@@ -110,42 +118,21 @@ class Viewer implements \ArrayAccess, \IteratorAggregate {
 	
 	public function __get($key)
 	{
-            if (array_key_exists($key, $this->tpl))
-		return $this->tpl[$key];
-            else
-                return null;
+        if (array_key_exists($key, $this->tpl))
+		    return $this->tpl[$key];
+        else
+          return null;
 	}
         
     public function sendOutput($state)
     {
         $this->output = $state;
     }
-
-    public function offsetExists($offset) {
-        return array_key_exists($offset, $this->tpl);
-    }
-    
-    public function offsetGet($offset) {
-        return $this->$offset;
-    }
-
-    public function offsetSet($offset, $value) {
-        $this->$offset = $value;
-    }
-
-    public function offsetUnset($offset) {
-        unset($this->tpl[$offset]);
-    }
-    
-    public function getIterator() {
-        return new \ArrayIterator($this->tpl);
-    }
-    #Language warpers
     
     public function translate($string) {
         
         if (empty($this->_translate)) {
-            $this->_translate = new Translate($this->_config);
+            $this->_translate = new Translate($this->_config, $this->language);
         }
         
         return $this->_translate->translate($string);
@@ -157,8 +144,14 @@ class Viewer implements \ArrayAccess, \IteratorAggregate {
     
     public function __destruct() {
         if ($this->output == false) return;
-        
-        print $this->compress($this->viewContents);
+        switch ($this->_compress) {
+            case true:
+                print $this->compressed();
+                break;
+            default:
+                print $this->generic();
+                break;
+        } 
     }
 	
 }

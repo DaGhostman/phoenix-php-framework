@@ -1,9 +1,6 @@
 <?php
 namespace Phoenix\Application;
 
-use Phoenix\Core\ErrorManager;
-use Phoenix\File;
-
 class Configurator implements \ArrayAccess, \IteratorAggregate {
     protected $_fileObject = null;
     protected $_nsDelimiter = '-';
@@ -74,12 +71,10 @@ class Configurator implements \ArrayAccess, \IteratorAggregate {
         $option = $this->stripOption($offset);
         
         if (!$this->_fileObject->offsetExists($namespace)) {
-            print 'No NS';
             return false;
         } 
         
         if (!isset($this->_fileObject[$namespace][$option])) {
-            print 'No OPT: '.$option;
             return false;
         }
         

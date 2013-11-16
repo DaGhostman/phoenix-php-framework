@@ -19,15 +19,25 @@ class Request {
     
     private static $instance = null;
     
-    public static function getInstance($uri = null, $params = null)
+    /**
+     * 
+     * Creates the instance of  the current request object
+     * for web application the <strong>$_SERVER['REQUEST_URI']</strong>
+     * should be fine. For CLI applications should be set as to 
+     * match the patterns used in the routes.
+     * 
+     * @param string $uri The current request address
+     * @param array $params a
+     */
+    public static function getInstance($uri = null)
     {
-        if (!self::$instance) self::$instance = new Request($uri, $params);
+        
+        if (!self::$instance)  {
+            self::$instance = new Request($uri);
+        }
     
         return self::$instance;
     }
-    /**
-     * @todo Should remove the $_SERVER variables to enable cli apps dev (?)
-     */
     
     /**
      * Creates the request object
@@ -37,45 +47,9 @@ class Request {
      * @throws \InvalidArgumentException
      * @return \Forge\Router\Request
      */
-    private function __construct($params = array())
+    private function __construct($uri = '/')
     {
-        $params = !empty($params) ? $params : array();
-        
-        $protocol = ( isset($_SERVER['HTTPS'] )  && $_SERVER['HTTPS'] != 'off' ) ? 'https://' : 'http://';
-        
-        $url = $protocol . $_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'].$_SERVER['QUERY_STRING'];
-        
-        if(!filter_var($url, FILTER_VALIDATE_URL))
-        {
-            throw new \InvalidArgumentException('Invalid URL');
-        }
-
-        
-        $x = parse_url($url);
-        $this->urlComponents = $x;
-        $this->serverName = $x['host'];
-        $this->domainComponents = array();
-        
-        if (preg_match_all('/\./i', $this->serverName, $matches) === 2):
-                list(
-                $this->domainComponents['subdomain'], 
-                $this->domainComponents['domain'], 
-                $this->domainComponents['tld'])=  explode('.', $this->serverName);
-        endif;
-        
-        if (preg_match_all('/\./i', $this->serverName, $matches) === 1):
-                $this->domainComponents['subdomain'] = null;
-                list(
-                $this->domainComponents['domain'], 
-                $this->domainComponents['tld'])=  explode('.', $this->serverName);
-        endif;
-        
-        foreach($params as $key => $value)
-        {
-            $this->setParams($key, $value);
-        }
-        
-        $this->uri = (array_key_exists('path',$x)) ? $x['path'] : '/';
+        $this->uri = $uri;
         
         return $this;
     }
@@ -88,29 +62,6 @@ class Request {
     public function getUri()
     {
         return $this->uri;
-    }
-    
-    /**
-     * Returns the server name for the current request
-     * 
-     * @return string The server name which handles the current request
-     */
-    
-    public function getServerName()
-    {
-        return $this->serverName;
-    }
-    
-    /**
-     * Returns the subdomain of the current request
-     * 
-     * @return string The subdomain of the request
-     */
-    public function getSubDomain()
-    { 
-        if (array_key_exists('subdomain', $this->domainComponents))
-            return $this->domainComponents['subdomain'];
-        else return '';
     }
     
     public function __call($name, $args = array()) {
@@ -135,27 +86,7 @@ class Request {
                 break;
         endswitch;
     }
-    
-    /**
-     * Returns the domain name WITHOUT tld
-     * 
-     * @return string The domain name WITHOUT tld
-     */
-    
-    public function getDomainName()
-    {
-        return $this->domainComponents['domain'];
-    }
-    
-    /**
-     * Return domains tld
-     * 
-     * @return string The domain tld
-     */
-    public function getTld()
-    {
-        return $this->domainComponents['tld'];
-    }
+
     /**
      * Preforms a check against the request to determinate its type
      * 
@@ -163,6 +94,7 @@ class Request {
      */
     public function getType()
     {
+        if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
         switch($_SERVER['REQUEST_METHOD']):
         case self::REQ_GET:
             return strtoupper($_SERVER['REQUEST_METHOD']);
@@ -180,9 +112,12 @@ class Request {
             return strtoupper($_SERVER['REQUEST_METHOD']);
             break;
         default:
-            return 'Unknown';
+            return 'UNKNOWN';
             break;
         endswitch;
+        }
+        
+        return 'CLI';
     }
     
     /**

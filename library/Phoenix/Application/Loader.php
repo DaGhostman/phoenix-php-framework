@@ -1,8 +1,6 @@
 <?php
 namespace Phoenix\Application;
 
-use Phoenix\Controller\Front;
-
 
 class Loader
 {
@@ -71,16 +69,10 @@ class Loader
     /**
      * Wrapper of the Phoenix\Controller\Front::run();
      * 
-     * @see Phoenix\Controller\Front
-     * @throws \RuntimeException
      */
-    public function run($frontController, $configuration)
+    public function run($uri, $frontController, $configuration)
     {
-        try {
             $this->bootstrap($configuration);
-            $frontController->run($configuration);
-        } catch (\Exception $e) {
-            throw new \RuntimeException("Exception occured while trying to run the application", null, $e);
-        }
+            $frontController->run($uri, $configuration);
     }
 }
