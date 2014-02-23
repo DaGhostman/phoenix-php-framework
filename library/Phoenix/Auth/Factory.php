@@ -28,7 +28,7 @@
 namespace Phoenix\Auth;
 use Phoenix\Auth\Adapter\Db;
 use Phoenix\Auth\Adapter\Http;
-use Phoenix\Core\ErrorManager;
+use Phoenix\Core\HttpErrorsManager;
 use Phoenix\Router\Response;
 
 class Factory {
@@ -48,7 +48,7 @@ class Factory {
                 $this->__instance = new Http($arg);
                 break;
             default:
-                ErrorManager::getInstance()->send(
+                HttpErrorsManager::getInstance()->send(
                 Response::HTTP_503,
                         new \InvalidArgumentException(
                                 'Invalid Adapter supplied to Auth\\Factory'

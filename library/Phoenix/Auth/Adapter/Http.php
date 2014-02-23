@@ -28,7 +28,7 @@ namespace Phoenix\Auth\Adapter;
 
 use Phoenix\Auth\Adapter\IAdapter;
 use Phoenix\Router\Response;
-use Phoenix\Core\ErrorManager;
+use Phoenix\Core\HttpErrorsManager;
 
 use Phoenix\File\Cvs;
 use Phoenix\File\Json;
@@ -62,7 +62,7 @@ class Http extends IAdapter {
                         )
                 ->send();
         
-        ErrorManager::getInstance()
+        HttpErrorsManager::getInstance()
                 ->sendError(
                         Response::HTTP_403, 
                         new \InvalidArgumentException(
@@ -98,7 +98,7 @@ class Http extends IAdapter {
                 $this->authenticated = TRUE;
             }
         } else {
-            ErrorManager::getInstance()->sendError(
+            HttpErrorsManager::getInstance()->sendError(
                 Response::HTTP_500,
                 new \InvalidArgumentException(
                     'Unkonwn source for authentication'

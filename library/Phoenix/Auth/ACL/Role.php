@@ -108,9 +108,9 @@ class Role {
      * 
      * @param bool $state True to allow the role to be extended
      */
-    public function allowInheritance()
+    public function allowInheritance($state = true)
     {
-        $this->_allowInheritance = true;
+        $this->_allowInheritance = $state;
         
         return $this;
     }

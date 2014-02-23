@@ -1,6 +1,7 @@
 <?php
 namespace Phoenix\Mail;
 
+//use Phoenix\Core\HttpErrorsManager;
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -209,6 +210,7 @@ class Send {
         fputs($this->instance, "From: {$this->_replyTo}".PHP_EOL);
         if ('' != $this->_organisation)
             fputs($this->instance, "Organisation: {$this->_organisation}".PHP_EOL);
+        fputs($this->instance, "User-Agent: Mailer/Sender (@{$_SERVER['SERVER_NAME']}:{$_SERVER['SERVER_PORT']})".PHP_EOL);
         fputs($this->instance, "X-UA: Phoenix PHP Framework/1.x".PHP_EOL);
         fputs($this->instance, "X-Software: PrimeManager(tm)".PHP_EOL);
         fputs($this->instance, "MIME-Version: 1.0".PHP_EOL);

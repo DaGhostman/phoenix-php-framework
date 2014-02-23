@@ -3,39 +3,35 @@
 namespace Phoenix\Router;
 
 use Phoenix\Router\Request;
+use Phoenix\Storage\Registry;
 
 
 class Route
 {
     
-    protected $_path;
-    protected $_controllerClass;
+    protected $path;
+    protected $controllerClass;
     
-    protected $_defaultAction;
-    protected $_defaultController;
-    protected $_defaultModule;
+    protected $defaultAction,
+        $defaultController,
+        $defaultModule;
     
-    /**
-     * 
-     * Sets the route information which will be created by Mapper
-     * @param string $path The uri path of the request
-     * @param array $route route definitions
-     * @param Configurator $conf the configuration object
-     */
+    
     public function __construct($path, $route = array(
             'module' => ':module',
             'controller' => ':controller',
-            'action' => ':action',
-            'lang' => 'en'
-            ), $conf)
+            'action' => ':action'
+            ))
     {
         
-        $this->_defaultAction = 'index';
-        $this->_defaultController = 'index';
-        $this->_defaultModule  = $conf['core-application.default.module'];
-        $this->controllerPath = $conf['core-application.controller.path'];
+        $conf = Registry::get('config', 'SystemCFG');
         
-        $this->modulePath = $conf['core-application.module.path'];
+        $this->defaultAction = 'index';
+        $this->defaultController = 'index';
+        $this->defaultModule  = $conf['application.default.module'];
+        $this->controllerPath = $conf['application.controller.path'];
+        
+        $this->modulePath = $conf['application.module.path'];
         
         $this->module = $route['module'] ? 
         $route['module'] : ($this->module ? $this->module : ':module');
@@ -44,40 +40,28 @@ class Route
         $this->action = ($route['action'] ? 
         $route['action'] : ':action');
         
-        $this->language = ($route['lang'] ? $route['lang'] : null);
-        
-        $this->_path = $path;
+        $this->path = $path;
         $this->route = array(
                 'module' => $this->module,
                 'controller' => $this->controller,
-                'action' => $this->action,
-                'language' => $this->language
+                'action' => $this->action
                 );
         
-        $this->_controllerClass = ucfirst($this->controller).'Controller';
+        $this->controllerClass = ucfirst($this->controller).'Controller';
         
     }
     
-    /**
-     * 
-     * Loads the per-module bootstrap and looks up the controller
-     * @param Request $request the current request object
-     * @return void
-     */
-    public function load($request)
+    public function load()
     {
         
-        $entries=array_values(array_filter(explode('/', 
-                        preg_replace('#'.rtrim($this->_path, '*').'#i', 
-                            '', 
-                            $request->getUri(), 
-                            1))));
+        $entries=array_values(
+        	array_filter(
+        		explode('/', preg_replace('#'.rtrim($this->path,'*').'#i','',Request::getInstance()->getUri(),1))
+        	)
+        );
         
         if ($this->module == ':module') {
-            $module = (isset($entries[0]) && !empty($entries[0]) ? 
-                $entries[0] : $this->_defaultModule
-            );
-                
+            $module = (isset($entries[0]) && !empty($entries[0]) ? $entries[0] : $this->defaultModule);
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -85,10 +69,7 @@ class Route
         }
         
         if ($this->controller == ':controller') {
-            $controller = (isset($entries[0]) && !empty($entries[0]) ? 
-                $entries[0] : $this->_defaultController
-            );
-            
+            $controller = (isset($entries[0]) && !empty($entries[0]) ? $entries[0] : $this->defaultController);
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -96,9 +77,7 @@ class Route
         }
         
         if ($this->action == ':action') {
-            $action = (isset($entries[0]) && !empty($entries[0]) ? 
-                        $entries[0] : $this->_defaultAction
-                        );
+            $action = (isset($entries[0]) && !empty($entries[0]) ? $entries[0] : $this->defaultAction);
             unset($entries[0]);
             $entries = array_values($entries);
         } else {
@@ -119,23 +98,19 @@ class Route
         if (is_readable(APPLICATION_PATH . $this->modulePath .
             DIRECTORY_SEPARATOR . $this->module .
             $this->controllerPath . DIRECTORY_SEPARATOR .
-            ucfirst($this->controller) . 'Controller.php')) {
-            $this->_controllerClass = ucfirst($this->controller).'Controller';
+            ucfirst($this->controller) . 'Controller.php'))
+        {
+            $this->controllerClass = ucfirst($this->controller).'Controller';
         
-            if (is_readable(APPLICATION_PATH . 
-                            $this->modulePath . 
-                            DIRECTORY_SEPARATOR . 
-                            $this->module.'/Bootstrap.php')) {
-                                
-                require_once APPLICATION_PATH . 
-                                $this->modulePath . 
-                                DIRECTORY_SEPARATOR . 
-                                $this->module.'/Bootstrap.php';
-                                
+            
+            
+            if (is_readable(APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php'))
+            {
+                require_once APPLICATION_PATH . $this->modulePath . DIRECTORY_SEPARATOR .$this->module.'/Bootstrap.php';
                 $this->moduleBootstrap = new \ModuleBootstrap();
         
-                foreach (get_class_methods($this
-                            ->moduleBootstrap) as $method) {
+                foreach(get_class_methods($this->moduleBootstrap) as $method)
+                {
                     $this->moduleBootstrap->$method();
                 }
             }
@@ -143,73 +118,45 @@ class Route
             $this->route = array(
                 'module' => $this->module,
                 'controller' => $this->controller,
-                'action' => $this->action,
-                'language' => $this->language
+                'action' => $this->action
             );
             Request::getInstance()->setRoute($this->route);
         
         
-        $controllerClass = APPLICATION_PATH . $this->modulePath;
-        $controllerClass .= DIRECTORY_SEPARATOR . $this->module;
-        $controllerClass .= $this->controllerPath . DIRECTORY_SEPARATOR;
-        $controllerClass .= ucfirst($this->controller) . 'Controller.php';
+        $controllerClass = REAL_PATH .'/application/modules/';
+        $controllerClass .= $this->module. '/controllers/';
+        $controllerClass .= ucfirst($this->controller).'Controller.php';
         
         
         if (is_readable($controllerClass)) require_once $controllerClass;
         }
     }
 
-    /**
-     * 
-     * Returns the current route URI path
-     * @return void
-     */
     public function getPath()
     {
-        return $this->_path;
+        return $this->path;
     }
 
-    /**
-     * 
-     * Creates the controller and passes the configuration and route to it
-     * @param Request $request the current request object
-     * @param Configurator $config the configuration object
-     */
-    public function createController($request, $config)
+    public function createController()
     {
-        if (class_exists($this->_controllerClass))
-            return new $this->_controllerClass($request, $config);
-        else
-           return false;
+            if (class_exists($this->controllerClass))
+        return new $this->controllerClass;
+            else 
+                return false;
     }
     
-    /**
-     * 
-     * Returns the current request module
-     */
     public function getModule()
     {
         return $this->module;
     }
-    /**
-     * 
-     * Returns the current request controller
-     */
+    
     public function getController()
     {
         return $this->controller;
     }
     
-    /**
-     * 
-     * Returns the current request action
-     */
     public function getAction()
     {
         return $this->action;
-    }
-    
-    public function getLanguage() {
-        return $this->language;
     }
 }

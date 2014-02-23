@@ -1,20 +1,33 @@
 <?php
 namespace Phoenix\File;
 
-class Json implements \ArrayAccess, \IteratorAggregate {
+class Json {
     
     private $contents;
-    public function __construct($filepath)
+    public function __construct($filepath, $parse = true)
     {
-        if (!is_file($filepath) & !is_readable($filepath)):
-            throw new \InvalidArgumentException(sprintf('
-            The file \'%s\' does not exist or its not readable.
-            '));
+        if (is_file($filepath) & is_readable($filepath)):
+            $content = file_get_contents($filepath);
+            $this->contents = $this->toObject(json_decode($content, $parse));
         endif;
         
-        
-        $content = file_get_contents($filepath);
-        $this->contents = json_decode($content, true);
+    }
+    
+    
+    protected function toObject($array)
+    {
+        if (is_array($array))
+        {
+            $obj = new \stdClass();
+            foreach($array as $key => $value)
+            {
+                $obj->$key = $this->toObject($value);
+            }
+            
+            return $obj;
+        } else {
+            return $array;
+        }
     }
     
     public function __toString()
@@ -23,26 +36,13 @@ class Json implements \ArrayAccess, \IteratorAggregate {
     }
     
     public function __get($key)
-    {
-        return $this->contents[$key];
+    {  
+        return $this->contents->$key;
     }
-
-public function offsetExists($offset) {
-        return array_key_exists($offset, $this->contents);
-    }
-
-    public function offsetGet($offset) {
-        return $this->contents[$offset];
-    }
-
-    public function offsetSet($offset, $value) {}
     
-    public function getIterator() {
-        return new \ArrayIterator($this->contents);
-    }
-
-    public function offsetUnset($offset) {
-        unset($this->contents[$offset]);
+    public function __set($key, $value)
+    {
+        $this->contents->$key = $value;
     }
 }
 

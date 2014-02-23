@@ -29,6 +29,10 @@
 
 namespace Phoenix\Auth\Adapter;
 use Phoenix\Auth\Adapter\IAdapter;
+use Phoenix\Db\Crud\AccessLayer;
+use Phoenix\Core\HttpErrorsManager;
+use Phoenix\Router\Response;
+use Phoenix\Storage\Session;
 
 
 
@@ -36,13 +40,23 @@ use Phoenix\Auth\Adapter\IAdapter;
  * Database authentication adapter returned by 
  * the Phoenix\Auth2\Factory::__construct()
  * 
- * @package Auth\Adapter
- * @category Phoenix\Auth\Adapter
+ * @package Db
+ * @category Phoenix\Auth2\Adapter
  * @see Factory::__construct()
  * @uses Phoenix\Auth2\Adapter\IAdapter
+ * @uses Phoenix\Db\Orm\AccessLayer
+ * @uses Phoenix\Core\HttpErrorsManager
+ * @uses Phoenix\Router\Response
+ * @uses Phoenix\Storage\Registry
+ * @uses Phoenix\Storage\Session
  */
 
 class Db extends IAdapter {
+
+    const SAVE_ALL = 'all',
+            SAVE_DB = 'database',
+            SAVE_REG = 'registry',
+            SAVE_SESS = 'session';
     
     protected $__identity = null,
                 $__access = null,
@@ -56,15 +70,21 @@ class Db extends IAdapter {
      * @param \Phoenix\Db\Orm\AccessLayer $layer A configured object to use for the authentication
      */
     public function __construct($layer) {
-        try {
-            if (!is_object($layer)) {
-                throw new \RuntimeException('Argument should be object');
-            }
-        } catch (\RuntimeException $e) {
-            throw new \RuntimeException('Error while setting up Auth module',
-                null,
-                $e);
-        }
+        if (!$layer instanceof AccessLayer):
+            HttpErrorsManager::getInstance()->sendError(
+                Response::HTTP_500,
+                    new \InvalidArgumentException(
+                            'DB authentication requires instance of AccessLayer'
+                            )
+                    );
+        /*
+         * @FIXME: The connection check, maybe should not exist here. 
+         * AccessLayer throws an error when the instance passed to it is 
+         * not connected. (REMOVE?)
+         */
+        elseif ($layer->getAdapter()->isConnected() == false):
+            $layer->getAdapter()->connect();
+        endif;
         
         $this->__access = $layer;
     }
@@ -85,8 +105,7 @@ class Db extends IAdapter {
             return $this->$field;
         elseif (strpos($name, 'set') === 0):
             $field = substr($name, 3, strlen($name));
-            
-            $this->$field = $args;
+            return $this->$field = $args;
         endif;
     }
 
@@ -95,8 +114,10 @@ class Db extends IAdapter {
      * Db::setCredential(); and Db::setIdentity();, and updates the field name
      * passed to the Db::setTokenField(); with the identifier of the current 
      * session.
+     * 
      * @see Db::setCredential();
      * @see Db::setIdentity();
+     * 
      * @access public
      * @return \Phoenix\Auth2\Adapter\Db
      */
@@ -118,6 +139,14 @@ class Db extends IAdapter {
     
     /**
      * 
+     * @param const $store constant coresponding to the storage to save the 
+     * identity to. Possible options are Session, Registry, Db or all of them.
+     * Session will be presisted between requests untill the user session is 
+     * active
+     * 
+     * Registry will be lost on the next request (this should only be used if 
+     * you are using a custom storage for the registry, ie. cache and etc.)
+     * 
      * Db will update the user profile with the changes which will be permanent
      * 
      * @return \Phoenix\Auth2\Adapter\Db
@@ -128,6 +157,7 @@ class Db extends IAdapter {
             array($this->__tokenField => session_id()),
             $this->__fields
         );
+        $session = Session::set('userIdentity', $this->__identity);
         
         
         return $this;
@@ -136,10 +166,14 @@ class Db extends IAdapter {
     public function getIdentity() {
         
         if (empty($this->__identity)):
+            if (($id = Session::get('userIdentity')) != false):
+                $this->__identity = $id;
+            else:
             	$this->__access->setIdColumn($this->__tokenField);
                 $id = $this->__access->findById(session_id());
                 
                 $this->__identity = isset($id[0]) ? $id[0] : $id;
+            endif;
         endif;
 
         return $this->__identity;
@@ -153,8 +187,6 @@ class Db extends IAdapter {
      * @return bool
      */
     public function hasIdentity() {
-        $this->getIdentity();
-        
         return !empty($this->__identity);
     }
 

@@ -2,6 +2,8 @@
 
 namespace Phoenix\Db\Crud;
 
+use Phoenix\Db\Factory;
+
 
 abstract class AccessLayer {
     
@@ -12,25 +14,16 @@ abstract class AccessLayer {
     
     protected $_idColumn = 'id';
     
-    final public function __construct($adapter)
+    final public function __construct(Factory $adapter)
     {
-        if (!is_object($adapter)) {
-            throw new \RuntimeException('The argument should be an object');
-        }
-        
-        $methods = get_class_methods($adapter);
-        
-        if (in_array('isConnected', $methods)) {
-            if ($adapter->isConnected() != true) {
-                throw new \RunetimeExcetion('The adapter is not connected');
-            }
-        }
-        
         $this->adapter = $adapter;
     }
     
     final public function getAdapter()
-    {   
+    {
+        if (!$this->adapter instanceof Factory)
+            throw new \RuntimeException('Invalid DB adapter specified');
+        
         return $this->adapter;
     }
     
@@ -90,6 +83,8 @@ abstract class AccessLayer {
         return $this;
     }
 
+
+    
     abstract public function createEntity(array $row);
     
 }

@@ -5,30 +5,26 @@ use Phoenix\Router\Request;
 use Phoenix\View\Viewer;
 
 
-abstract class Action
+class Action
 {
-    protected $__request = array(),
-        $__configuration = array();
-        
-    protected $view = null;
-    
-    final public function __construct($request, $config)
+    final public function __construct()
     {
-        $this->view = new Viewer($request->getRoute(), $config);
-        $this->__configuration = $config;
-        $this->__request = $request;
+        $uri = Request::getInstance()->getParams();
+        $this->view = Viewer::getInstance();  
+        $this->view->sendOutput(true);
+        
         $x = Request::getInstance()->getRoute();
         $mainModuleAutoloader = new Autoloader();
-        $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . 
-            DIRECTORY_SEPARATOR . $config['core-application.module.path'] .
-            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR)
-        ->register();
+        $mainModuleAutoloader->setIncludePath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'modules' .
+            DIRECTORY_SEPARATOR . $x['module'] . DIRECTORY_SEPARATOR)->register();
     }
     
         
     final public function __destruct()
     {
-        unset($this->view);
+        $uri = Request::getInstance()->getParams();
+        $this->view = Viewer::getInstance(); 
+        $this->view->render();
     }
 
 }

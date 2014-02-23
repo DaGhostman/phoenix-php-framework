@@ -1,107 +1,89 @@
 <?php
 namespace Phoenix\Application;
 
-class Configurator implements \ArrayAccess, \IteratorAggregate {
-    protected $_fileObject = null;
-    protected $_nsDelimiter = '-';
+use Phoenix\Core\HttpErrorsManager;
+use Phoenix\File;
+
+class Configurator {
     
-    public function setDelimiter($del) {
-        $this->_nsDelimiter = $del;
-        
-        return $this;
-    }
     
-    public function setFile($object) {
-        if (!is_object($object) || (!$object instanceof \ArrayAccess)) {
-            throw new \InvalidArgumenException('
-                The supplied argument should be an object and implement ArrayAccess
-            ');
+    const CONFIG_JSON = 1;
+    const CONFIG_INI = 2;
+    protected $filename = '', $cfg = null, $storage = array();
+    private static $_instance = null;
+    
+    private function __construct(){}
+    /**
+     * Configuration object, that is used for internal configuration 
+     * inside the framework. If you need to use separate config file
+     * please use Configurator::getConfigurator();
+     * 
+     * @see Configurator::getConfigurator
+     * @return Configurator The configurator instance.
+     */
+    public static function getInstance()
+    {
+        if (self::$_instance == null)
+        {
+            self::$_instance = new Configurator;
         }
         
-        $this->_fileObject = $object;
-        
-        return $this;
-    }
-    
-    public function __construct($object = null){
-        if ($object != null) {
-            $this->setFile($object);
-        }
+        return self::$_instance;
     }
     
     /**
+     * Returns a cloned configurator instance. Usefull
+     * when there is a need of parsing external config files
      * 
-     * Protected method used to strip the 
-     * @param unknown_type $offset
+     * @return Configurator
      */
-    protected function stripNamespace($offset) {
-        list($namespace, $option)=preg_split('#'.$this->_nsDelimiter.'#i', $offset);
-    
-        return $namespace;
+    public static function getConfigurator()
+    {
+        return clone Configurator::getInstance();
     }
     
-    protected function stripOption($offset) {
-        list($namespace, $option)=preg_split('#'.$this->_nsDelimiter.'#i', $offset);
-    
-        return $option;
+    /**
+     * Factory method that returns COnfiguration file object.
+     * All file objects are stored in array, against a hash of the filename
+     * if the same file is required multiple times it will return the 
+     * already used one. It will not presist the objects between requests
+     * 
+     * @param string $filename Relative to REAL_PATH destination of the file to be parsed with leading '/'
+     * @param const $type CONFIG_JSON or CONFIG_INI to specify the config file type
+     * @return Phoenix\File\Ini|Phoenix\File\Json object for accessing the configuration file
+     */
+    public function parse($filename = '/application/config/application.ini', $type = self::CONFIG_INI)
+    {
+        
+        $hash_key = hash('crc32', $filename);
+        
+        if (array_key_exists($hash_key, $this->storage))
+        {
+            return $this->storage[$hash_key];
+        } else {
+        
+            switch($type):
+                case self::CONFIG_INI:
+                    $cfg = new File\Ini(REAL_PATH.$filename, true);
+                    break;
+                case self::CONFIG_JSON:
+                    $cfg = new File\Json(REAL_PATH.$filename, true);
+                    break;
+                default:
+                    HttpErrorsManager::getInstance()->sendError(
+                        \Phoenix\Router\Response::HTTP_503, 
+                        new \RuntimeException("Unable to get the type of the configuration file")
+                        );
+                    break;
+            endswitch;
+            
+            $this->storage[$hash_key] = $cfg;
+            return $this->storage[$hash_key];
+        }
+        
     }
 
-    /**
-     * @see ArrayAccess::offsetGet()
-     */
-    public function offsetGet($offset) {
-        $namespace = $this->stripNamespace($offset);
-        $option = $this->stripOption($offset);
-        
-        
-        if (!$this->offsetExists($offset)) {
-            throw new \InvalidArgumentException(sprintf('
-            The namespace \'%s\' or option \'%s\' are not found in the configuration.
-            ', $namespace, $option));
-        }
-        
-        return $this->_fileObject[$namespace][$option];
-    }
     
-    /**
-     * @see ArrayAccess::offsetExists()
-     */
-    public function offsetExists($offset) {
-        $namespace = $this->stripNamespace($offset);
-        $option = $this->stripOption($offset);
-        
-        if (!$this->_fileObject->offsetExists($namespace)) {
-            return false;
-        } 
-        
-        if (!isset($this->_fileObject[$namespace][$option])) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    public function offsetSet($offset, $value) {}
-    
-    /**
-     * @see ArrayAccess::offsetUnset()
-     */
-    public function offsetUnset($offset) {
-        if ($this->offsetExists($offset) == true) {
-            
-            $namespace = $this->stripNamespace($offset);
-            $option = $this->stripOption($offset);
-            
-            unset($this->_fileObject[$namespace][$option]);
-        }
-    }
-    
-    /**
-     * @see IteratorAggregate::getIterator()
-     */
-    public function getIterator() {
-        return new \ArrayIterator($this);
-    }
 }
 
 ?>

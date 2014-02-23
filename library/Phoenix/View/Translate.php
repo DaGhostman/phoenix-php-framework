@@ -38,6 +38,22 @@ class Translate {
     protected static $_instance = null;
     
     /**
+     * 
+     * Singleton initialization so that waste of resources
+     * could be achieved (due to the usage of XML files).
+     * 
+     * @return Translate
+     */
+    public static function getInstance()
+    {
+        if (empty(self::$_instance))
+            self::$_instance = new Translate ();
+        
+        
+        return self::$_instance;
+    }
+    
+    /**
      * Method to override the language supplied by the Accept-Language.
      * The usage of it could be usefull when internationalization and
      * targeted SEO should be achieved.
@@ -47,15 +63,14 @@ class Translate {
      * @return self
      */
     public function setLanguage($lang) {
-        $this->xml = null;
     	$this->lang = $lang;
     	
     	return $this;
     }
     
-    public function __construct($config, $language = null) {
+    protected function __construct() {
         
-        $this->lang = $language ? $language : $this->getPrefferedLanguage($config);
+        $this->lang = $this->getPrefferedLanguage();
     }
     
     /**
@@ -70,30 +85,50 @@ class Translate {
      */
     public function translate($string)
     {
-        $result = $string;
-        
         if (empty($this->xml)) {
-            $filename = REAL_PATH . $this->dir . 
-                                $this->lang . '.xml';
+            $this->parse();
+        }
         
-            if (!is_file($filename) || !is_readable($filename)) {
-                throw new \Exception("Unable to load language file " . 
-                                $this->lang);
+            if($this->xml != null) {
+                $seg = $this->xml->xpath(
+                        '//tu[@id="' . $string . '"]/tuv[@lang="' . $this->lang . '"]'
+                        );
+            
+                if (($seg == false) || (empty($seg) || (isset($seg[0])))) {
+                	$seg = $this->xml->xpath(
+                        '//entry[@id="' . $string . '"][@lang="' . $this->lang . '"]'
+                        );
+                	
+                	$result = $seg[0];
+                } else {
+                    $result = $seg[0]->seg[0];
+                }
+            } else {
+                return $string;
             }
-        
-            $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
-        }
-        
-        $xpath = sprintf('//entry[@id="%s"][@lang="%s"]', 
-                        $string, $this->lang);
-        
-        if($this->xml != null) {
-            $seg = $this->xml->xpath($xpath);
-            if (!empty($seg)) { $result = $seg[0]; }
-        }
 	
             
-        return $result;
+        return $result ? $result : $string;
+    }
+    
+    /**
+     * 
+     * Parses the XML document which contains the translation definitions.
+     * The file name should be the language code determinated by the Accept-Language
+     * or by the manual defined language.
+     * 
+     * @access protected
+     */
+    protected function parse()
+    {
+        $filename = REAL_PATH . $this->dir . 
+                                $this->lang . '.xml';
+        
+        if (is_file($filename) && is_readable($filename))
+            $this->xml = new \SimpleXMLElement($filename, NULL, TRUE);
+        
+        
+        return; 
     }
 
     
@@ -102,14 +137,17 @@ class Translate {
      * The method which is used to parse the 'Accept-Language' header
      * and determinate the user language based on the 
      */
-    public function getPrefferedLanguage($cfg)
+    public function getPrefferedLanguage()
     {
+        $cfg = Configurator::getInstance()->parse();
         
         $websiteLanguages = array();
-        foreach($cfg['language-supported'] as $value)
+        $raw = $cfg->raw();
+        foreach($raw['language']['supported'] as $value)
             $websiteLanguages[] = strtolower($value);
         
-        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']))
+        {
             $langParse = null;
             
             preg_match_all(
@@ -151,7 +189,7 @@ class Translate {
                 }
             }
         } else {
-            return $cfg['language-default'];
+            return $cfg->language->default;
         }
         
         

@@ -27,112 +27,159 @@
 
 namespace Phoenix\View;
 
-use Phoenix\Application\ErrorManager;
+use Phoenix\Core\HttpErrorsManager;
 use Phoenix\Router\Request;
 use Phoenix\View\Translate;
-class Viewer  {
+class Viewer implements \ArrayAccess{
     
     private static $_instance = null;
     
-    protected $viewContents;
-    protected $tpl = array();
-    protected $language = null;
-    protected $_translate = null, $_config = null;
-    protected $_template = null;
-    protected $_compress = true;
+    private $viewContents;
+    private $view = null;
+    private $tpl = null;
+    protected $compiler = null;
+    
+    private static $uri;
+    public $_helper = null;
+    protected $_translate = null;
+    
     protected $output = true;
+        
+    public $compile = FALSE;
     
-    public function setTranslator($translator) {
-        $this->_translate = $translator;
-    }
-    
-    public function __construct($route, $conf)
+    protected function __construct()
     {
-        $this->_config = &$conf;
-        
-        if ($this->output != false) {
-            $module = $route['module'];
-            $controller = $route['controller'];
-            $action = $route['action'];
-            
-            $this->language = $route['language'];
-            
-            $this->_translate = new Translate($this->_config, $this->language);
-            
-            $this->_template = APPLICATION_PATH . 
-                $conf['core-application.module.path'] . 
-                DIRECTORY_SEPARATOR . $module . 
-                $conf['core-application.view.path'] .
-                DIRECTORY_SEPARATOR . $controller .
-                DIRECTORY_SEPARATOR . $action.'.phtml';
-                
-        }
-        
-    }
+        $this->uri = Request::getInstance()->getRoute();
 
-    private function getContents() {
-        if (is_readable($this->_template)):
-            ob_start();
-            include_once($this->_template);
-            $this->viewContents = ob_get_contents();
-            ob_end_clean();
-        else:
-            throw new \OutOfRangeException('
-               Unable to find the template: ' . 
-               $this->_template, 503
+        return $this;
+    }
+    
+    public function setTemplate($templateName)
+    {
+        $this->view = $templateName;
+        
+        return $this;
+    }
+    
+    private function prepare()
+    {
+        if ($this->output != false) {
+            $module = $this->uri['module'];
+            $controller = $this->uri['controller'];
+            $action = ($this->view ? $this->view : $this->uri['action']);
+        
+            $conf = \Phoenix\Storage\Registry::get('config', 'SystemCFG');
+        
+            try {
+                if (is_readable(APPLICATION_PATH . '/modules/'.$module.'/views/'.$controller.'/'.$action.'.phtml')):
+
+                    ob_start();
+                    include_once(APPLICATION_PATH . $conf['application.module.path'] .
+                        DIRECTORY_SEPARATOR . $module . $conf['application.view.path'] .
+                        DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR
+                        . $action . '.phtml'
+                        );
+                    $this->viewContents = $this->compress(ob_get_contents());
+                    ob_end_clean();
+                else:
+                    throw new \OutOfRangeException(
+                        'Unable to find the template for : ' . 
+                        $_SERVER['HTTP_HOST'] . '/' . $module . '/' . 
+                        $controller . '/' . $action
+                        );
+                endif;
+            
+            } catch (\OutOfRangeException $e) {
+                HttpErrorsManager::getInstance()->sendError(404, $e);
+            }
+        }
+    }
+        
+        public function compress($content) {
+            $search = array(
+                '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+                '/[^\S ]+\</s',  // strip whitespaces before tags, except space
+                '/(\s)+/s'       // shorten multiple whitespace sequences
             );
-        endif;
-    }
-    
-    protected function compressed() {
-        $this->getContents();
-        
-        $search = array(
-        	'/\>[^\S ]+/s',  // strip whitespaces after tags, except space
-        	'/[^\S ]+\</s',  // strip whitespaces before tags, except space
-        	'/(\s)+/s'       // shorten multiple whitespace sequences
-        );
             
-        $replace = array(
-            '>',
-            '<',
-            '\\1'
-        );
+            $replace = array(
+                '>',
+                '<',
+                '\\1'
+            );
             
-        $trimed = preg_replace($search, $replace, $this->viewContents);
-        $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed);
-        
-        return $minified;
+            $trimed = preg_replace($search, $replace, $content);
+            $minified = preg_replace('/<!--(.*)-->/Uis', '', $trimed, -1);
+            return $minified;
     }
-    
-    protected function generic() {
-        $this->getContents();
-        
-        return $this->viewContents;
-    }
+	
+	
+	public static function getInstance($uri = '')
+	{	
+		if (self::$_instance == false)
+			self::$_instance = new Viewer($uri);
+		elseif (!self::$_instance instanceof Viewer)
+			self::$_instance = new Viewer($uri);
+		
+		return self::$_instance;
+	}
 	
 	public function __set($key, $value)
 	{
 		$this->tpl[$key] = $value;
 	}
 	
+	public function setCache($state)
+	{
+		$this->compile = $state;
+	}
+	
 	public function __get($key)
 	{
-        if (array_key_exists($key, $this->tpl))
-		    return $this->tpl[$key];
-        else
-          return null;
+            if (array_key_exists($key, $this->tpl))
+		return $this->tpl[$key];
+            else
+                return null;
 	}
         
-    public function sendOutput($state)
+    public function sendOutput($state = false)
     {
         $this->output = $state;
     }
+	
+	public function render()
+	{
+            $this->prepare();
+            if ($this->output == false) $this->viewContents = '';
+            print $this->viewContents;
+	}
+        
+        public static function resetInstance()
+        {
+            self::$_instance = null;
+        }
+
+    public function offsetExists($offset) {
+        return array_key_exists($offset, $this->tpl);
+    }
+    
+    public function offsetGet($offset) {
+        return $this->$offset;
+    }
+
+    public function offsetSet($offset, $value) {
+        $this->$offset = $value;
+    }
+
+    public function offsetUnset($offset) {
+        unset($this->tpl[$offset]);
+    }
+    #Language warpers
     
     public function translate($string) {
         
         if (empty($this->_translate)) {
-            $this->_translate = new Translate($this->_config, $this->language);
+            $this->_translate = Translate::getInstance();
         }
         
         return $this->_translate->translate($string);
@@ -142,16 +189,6 @@ class Viewer  {
         return $this->_translate->getCurrentLanguage();
     }
     
-    public function __destruct() {
-        if ($this->output == false) return;
-        switch ($this->_compress) {
-            case true:
-                print $this->compressed();
-                break;
-            default:
-                print $this->generic();
-                break;
-        } 
-    }
+    
 	
 }
